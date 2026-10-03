@@ -103,6 +103,9 @@ async function cloudAutoSync(){
   const pending=cloudPending();
   for(const id of [...pending]){const t=db.tasks.find(x=>x.id===id);if(t)await cloudUpsertAction(t)}
   await cloudPull(true);
+  // Bibliothèque : utiliser la même synchronisation automatique que les Actions.
+  // Cela garantit la récupération des ressources Supabase même si postgres_changes ne livre aucun événement.
+  if(typeof window.portalRefreshLibrary==='function') await window.portalRefreshLibrary();
   cloudSetState('Synchronisé',true);
   cloudMessage('Synchronisation automatique : '+new Date().toLocaleTimeString('fr-FR'));
  }catch(err){cloudSoftError(err)}
