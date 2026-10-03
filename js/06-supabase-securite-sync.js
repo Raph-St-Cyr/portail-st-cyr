@@ -137,6 +137,7 @@ function cloudSettingsEditing(){
 }
 const PORTAL_SETTINGS_PULL_INTERVAL=120000; // V6.2.22 : 120 secondes uniquement pour portal_settings
 let portalSettingsLastPull=0;
+let portalSettingsInitialPullDone=false;
 async function cloudPullSettingsSafely(force=false){
  if(cloudSettingsEditing())return 'editing';
  const now=Date.now();
@@ -144,6 +145,11 @@ async function cloudPullSettingsSafely(force=false){
  const result=await cloudSyncSettings();
  portalSettingsLastPull=Date.now();
  return result;
+}
+async function cloudInitialSettingsPull(){
+ if(portalSettingsInitialPullDone)return 'already-loaded';
+ portalSettingsInitialPullDone=true;
+ return cloudPullSettingsSafely(true);
 }
 window.portalSettingsSaved=()=>{portalSettingsDirty=false};
 // ===== fin V6.2.21 =====
@@ -212,8 +218,8 @@ async function authGateLogin(){
 }
 authLoginBtn.addEventListener('click',()=>authGateLogin().catch(err=>{authLoginBtn.disabled=false;authGateStatus.className='auth-status error';authGateStatus.textContent='Connexion impossible : '+(err?.message||err)}));
 authPassword.addEventListener('keydown',e=>{if(e.key==='Enter')authLoginBtn.click()});
-cloudClient.auth.getSession().then(({data})=>{setPortalAccess(data.session);if(data.session)setTimeout(async()=>{try{await cloudPullSettingsSafely(true)}catch(err){cloudSoftError(err)}cloudAutoSync()},0)}).catch(err=>{authGateStatus.className='auth-status error';authGateStatus.textContent='Vérification impossible : '+(err?.message||err)});
-cloudClient.auth.onAuthStateChange((_event,session)=>{setPortalAccess(session);if(session)setTimeout(async()=>{try{await cloudPullSettingsSafely(true)}catch(err){cloudSoftError(err)}cloudAutoSync()},0)});
+cloudClient.auth.getSession().then(({data})=>{setPortalAccess(data.session);if(data.session)setTimeout(async()=>{try{await cloudInitialSettingsPull()}catch(err){cloudSoftError(err)}cloudAutoSync()},0)}).catch(err=>{authGateStatus.className='auth-status error';authGateStatus.textContent='Vérification impossible : '+(err?.message||err)});
+cloudClient.auth.onAuthStateChange((_event,session)=>{setPortalAccess(session);if(session)setTimeout(async()=>{try{await cloudInitialSettingsPull()}catch(err){cloudSoftError(err)}cloudAutoSync()},0)});
 window.addEventListener('focus',()=>cloudAutoSync());
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)cloudAutoSync()});
 setInterval(()=>cloudAutoSync(),10000);
