@@ -122,10 +122,16 @@ async function cloudSyncSettings(){
  cloudApplySettingsPayload(data.payload);return 'pulled';
 }
 window.portalPushSettings=cloudPushSettings;
+// V6.2.21 : protéger uniquement les saisies en cours de la zone Paramètres.
+// La synchronisation Actions / Dossiers / Bibliothèque continue normalement en arrière-plan.
+let portalSettingsDirty=false;
+const portalSettingsEditIds=new Set(['commissionEdit','cfgElus','cfgAgents','cfgTypes','cfgDStatuses','cfgPriorityLabels','cfgCommune','newThemeName']);
+document.addEventListener('input',e=>{if(e.target&&portalSettingsEditIds.has(e.target.id))portalSettingsDirty=true},true);
+document.addEventListener('change',e=>{if(e.target&&portalSettingsEditIds.has(e.target.id))portalSettingsDirty=true},true);
 function cloudSettingsEditing(){
  const a=document.activeElement;
- const editIds=new Set(['commissionEdit','cfgElus','cfgAgents','cfgTypes','cfgDStatuses','cfgPriorityLabels','cfgCommune','newThemeName']);
- if(a&&editIds.has(a.id))return true;
+ if(portalSettingsDirty)return true;
+ if(a&&portalSettingsEditIds.has(a.id))return true;
  const themeDialog=document.getElementById('themeManager');
  return !!(themeDialog&&themeDialog.open&&themeDialog.contains(a));
 }
@@ -133,7 +139,8 @@ async function cloudPullSettingsSafely(){
  if(cloudSettingsEditing())return 'editing';
  return cloudSyncSettings();
 }
-// ===== fin V6.2.20 =====
+window.portalSettingsSaved=()=>{portalSettingsDirty=false};
+// ===== fin V6.2.21 =====
 
 let cloudAutoBusy=false;
 async function cloudAutoSync(){
