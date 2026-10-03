@@ -166,7 +166,14 @@ function cloudRealtimeRefresh(){
  clearTimeout(cloudRealtimeTimer);
  cloudRealtimeTimer=setTimeout(()=>cloudAutoSync(),250);
 }
-function cloudLibraryRealtimeRefresh(){
+function cloudLibraryRealtimeRefresh(payload){
+ const eventDiag=document.getElementById('libraryRealtimeEvent');
+ if(eventDiag){
+  const eventType=payload?.eventType||payload?.event||'ÉVÉNEMENT';
+  eventDiag.textContent=eventType+' — '+new Date().toLocaleTimeString('fr-FR');
+  eventDiag.classList.add('ok');
+ }
+ console.info('[Supabase Realtime Bibliothèque événement]',payload);
  clearTimeout(cloudLibraryRealtimeTimer);
  cloudLibraryRealtimeTimer=setTimeout(()=>{if(typeof window.portalRefreshLibrary==='function')window.portalRefreshLibrary()},250);
 }
