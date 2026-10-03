@@ -5,7 +5,7 @@ const cloudClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE
 
 function cloudSetState(text,ok=false){
  const el=$('cloudState'); if(!el)return;
- el.textContent=text; el.className='pill '+(ok?'cloud-ok':'cloud-warn');
+ el.textContent=text; el.className='pill '+(ok?'cloud-ok':'cloud-warn');const hi=document.getElementById('homeCloudIndicator'),ht=document.getElementById('homeCloudText');if(hi&&ht){let busy=/sync|connexion|session|temps réel/i.test(text)&&!ok;hi.className='cloud-indicator '+(ok?'ok':busy?'busy':'');ht.textContent=ok?'Supabase connecté':busy?'Supabase en attente':'Supabase déconnecté'}
 }
 function cloudMessage(text){if($('cloudDetails'))$('cloudDetails').textContent=text}
 function cloudSoftError(err){console.error('[Supabase]',err);cloudSetState('Erreur',false);cloudMessage('Supabase : '+(err?.message||err))}
@@ -168,6 +168,8 @@ function cloudStartRealtime(){
  cloudRealtimeChannel=cloudClient.channel('portail-actions-live')
   .on('postgres_changes',{event:'*',schema:'public',table:'actions'},cloudRealtimeRefresh)
   .on('postgres_changes',{event:'*',schema:'public',table:'action_subtasks'},cloudRealtimeRefresh)
+  .on('postgres_changes',{event:'*',schema:'public',table:'portal_resources'},()=>window.dispatchEvent(new CustomEvent('portal:resources-refresh')))
+  .on('postgres_changes',{event:'*',schema:'public',table:'portal_settings'},()=>cloudPullPortalSettings())
   .subscribe(status=>{
    if(status==='SUBSCRIBED'){cloudSetState('Temps réel actif',true);cloudMessage('Synchronisation temps réel active.')}
   });
@@ -187,3 +189,16 @@ document.getElementById('cloudLogout').addEventListener('click',()=>setTimeout(a
 
 
 (function verifyUniqueIds(){const seen=new Set(),dupes=new Set();document.querySelectorAll('[id]').forEach(n=>seen.has(n.id)?dupes.add(n.id):seen.add(n.id));if(dupes.size)console.error('[Portail municipal] IDs HTML dupliqués :',[...dupes]);})();
+
+// ===== V6.3 — référentiels Supabase et état accueil =====
+async function cloudSyncPortalSettings(){
+ try{const {data:{session}}=await cloudClient.auth.getSession();if(!session)return;const themes=JSON.parse(localStorage.getItem('saintcyr.portal.documentThemes.v1')||'[]');const payload={commissions:db.commissions||[],settings:db.settings||{},themes:Array.isArray(themes)?themes:[],updated_at:new Date().toISOString()};const {error}=await cloudClient.from('portal_settings').upsert({id:'global',payload},{onConflict:'id'});if(error&&error.code!=='PGRST205')throw error}catch(e){console.warn('[Paramètres Supabase]',e)}
+}
+async function cloudPullPortalSettings(){
+ try{const {data:{session}}=await cloudClient.auth.getSession();if(!session)return;const {data,error}=await cloudClient.from('portal_settings').select('payload').eq('id','global').maybeSingle();if(error){if(error.code!=='PGRST205')throw error;return}if(!data?.payload)return;const p=data.payload;if(Array.isArray(p.commissions)&&p.commissions.length)db.commissions=p.commissions;if(p.settings&&typeof p.settings==='object')db.settings={...db.settings,...p.settings};if(Array.isArray(p.themes)&&p.themes.length)localStorage.setItem('saintcyr.portal.documentThemes.v1',JSON.stringify(p.themes));save();refreshSelects();refreshConfig();render();window.dispatchEvent(new CustomEvent('portal:settings-changed'))}catch(e){console.warn('[Paramètres Supabase]',e)}
+}
+window.addEventListener('portal:settings-changed',()=>cloudSyncPortalSettings());
+window.addEventListener('portal:resources-refresh',()=>{});
+cloudClient.auth.onAuthStateChange((_event,session)=>{if(session)setTimeout(()=>cloudPullPortalSettings(),100)});
+cloudClient.auth.getSession().then(({data})=>{if(data.session)setTimeout(()=>cloudPullPortalSettings(),100)});
+// ===== fin V6.3 =====
