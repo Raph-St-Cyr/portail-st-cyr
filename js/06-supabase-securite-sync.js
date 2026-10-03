@@ -212,20 +212,3 @@ document.getElementById('cloudLogout').addEventListener('click',()=>setTimeout(a
 
 
 (function verifyUniqueIds(){const seen=new Set(),dupes=new Set();document.querySelectorAll('[id]').forEach(n=>seen.has(n.id)?dupes.add(n.id):seen.add(n.id));if(dupes.size)console.error('[Portail municipal] IDs HTML dupliqués :',[...dupes]);})();
-
-// ===== V6.2.24 — Paramètres municipaux synchronisés, édition par fenêtre protégée =====
-let portalSettingsLoaded=false;
-async function portalPullSettingsCloud(){
- const {data:{session}}=await cloudClient.auth.getSession();if(!session)return;
- const {data,error}=await cloudClient.from('portal_settings').select('payload').eq('id','municipal_config').maybeSingle();
- if(error)throw error;
- if(data?.payload&&typeof window.portalApplyCloudSettings==='function')window.portalApplyCloudSettings(data.payload);
- portalSettingsLoaded=true;
-}
-window.portalSaveSettingsCloud=async function(){
- const {data:{session}}=await cloudClient.auth.getSession();if(!session)return;
- const payload=typeof window.portalSettingsPayload==='function'?window.portalSettingsPayload():{};
- const {error}=await cloudClient.from('portal_settings').upsert({id:'municipal_config',payload,updated_at:new Date().toISOString()},{onConflict:'id'});if(error)throw error;
-};
-cloudClient.auth.getSession().then(({data})=>{if(data.session)portalPullSettingsCloud().catch(cloudSoftError)});
-cloudClient.auth.onAuthStateChange((_event,session)=>{if(session&&!portalSettingsLoaded)portalPullSettingsCloud().catch(cloudSoftError);else if(!session)portalSettingsLoaded=false});

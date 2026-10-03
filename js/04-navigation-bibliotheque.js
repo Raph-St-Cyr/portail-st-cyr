@@ -95,7 +95,3 @@ el('themeRows').onclick=async e=>{let rename=e.target.closest('[data-rename-them
 storeThemes(currentThemes);themeRows();updateThemeSelectors();renderDocs()};
 el('portalToday').textContent=new Intl.DateTimeFormat('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date());showModule('home');
 })();
-
-// V6.2.24 — accès contrôlé aux thématiques pour les paramètres synchronisés.
-window.portalGetThemes=()=>[...currentThemes];
-window.portalApplyThemes=(values)=>{const clean=[...new Set((values||[]).map(x=>String(x).trim()).filter(Boolean))];if(!clean.length)return;currentThemes=clean;storeThemes(currentThemes);themeRows();updateThemeSelectors();renderDocs();};

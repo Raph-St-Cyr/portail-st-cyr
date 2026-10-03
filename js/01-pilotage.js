@@ -116,33 +116,14 @@ document.addEventListener('click',e=>{let p=e.target.closest('[data-printminutes
 
 // Paramétrage des référentiels : stockage local, sauvegarde JSON et suggestions dans les fiches.
 
-function refreshConfig(){
- db.settings={...configDefaults,...(db.settings||{})};
- const options=a=>(a||[]).map(x=>'<option value="'+safe(x)+'"></option>').join('');
- $('elusList').innerHTML=options(db.settings.elus);$('peopleList').innerHTML=options([...new Set([...(db.settings.elus||[]),...(db.settings.agents||[])])]);$('typesList').innerHTML=options(db.settings.types);
- const fillPeople=(id,values,placeholder)=>{const el=$(id);if(!el)return;const previous=el.value;const all=[...new Set(values.filter(Boolean))];el.innerHTML='<option value="">'+safe(placeholder)+'</option>'+all.map(v=>'<option value="'+safe(v)+'">'+safe(v)+'</option>').join('');if(previous&&!all.includes(previous))el.add(new Option(previous,previous));el.value=previous||'';};
- fillPeople('pilot',[...db.settings.elus,...db.tasks.map(t=>t.pilot)],'Sélectionner un élu');fillPeople('dPilot',[...db.settings.elus,...db.dossiers.map(d=>d.pilot)],'Sélectionner un élu');fillPeople('assignee',[...db.settings.elus,...db.settings.agents,...db.tasks.map(t=>t.assignee)],'Sélectionner un intervenant');fillPeople('subOwner',[...db.settings.elus,...db.settings.agents,...db.dossiers.flatMap(d=>(d.subtasks||[]).map(t=>t.owner))],'Sélectionner un responsable');fillPeople('actionSubOwner',[...(db.settings.elus||[]),...(db.settings.agents||[]),...db.tasks.flatMap(t=>(t.subtasks||[]).map(x=>x.owner))],'Sélectionner un responsable');fillPeople('dType',[...db.settings.types,...db.dossiers.map(d=>d.type)],'Sélectionner un type');
- let current=$('dStatus')?.value||'À étudier';selectFill('dStatus',db.settings.dStatuses.length?db.settings.dStatuses:configDefaults.dStatuses);if(db.settings.dStatuses.includes(current))$('dStatus').value=current;
- renderSettingsCards();
-}
-const settingsDefs={
- commissions:{title:'Commissions',help:'Une commission par ligne.',get:()=>db.commissions,set:v=>{if(!v.length)throw Error('Conservez au moins une commission.');db.commissions=[...new Set([...v,...db.tasks.map(t=>t.commission).filter(Boolean)])];}},
- elus:{title:'Élus et pilotes',help:'Un nom par ligne.',get:()=>db.settings.elus||[],set:v=>db.settings.elus=v},
- agents:{title:'Agents / intervenants',help:'Un nom par ligne.',get:()=>db.settings.agents||[],set:v=>db.settings.agents=v},
- types:{title:'Types de dossiers',help:'Un type par ligne.',get:()=>db.settings.types||[],set:v=>db.settings.types=v},
- dStatuses:{title:'États des dossiers',help:'Un état par ligne.',get:()=>db.settings.dStatuses||[],set:v=>{if(!v.length)throw Error('Conservez au moins un état de dossier.');db.settings.dStatuses=v}},
- priorityLabels:{title:'Priorités personnalisées',help:'Un libellé par ligne.',get:()=>db.settings.priorityLabels||[],set:v=>db.settings.priorityLabels=v},
- commune:{title:'Nom de la commune',help:'Indiquez le nom de la commune.',single:true,get:()=>[db.settings.commune||'Saint-Cyr-sur-le-Rhône'],set:v=>db.settings.commune=v[0]||'Saint-Cyr-sur-le-Rhône'},
- themes:{title:'Thématiques documentaires',help:'Une thématique par ligne.',get:()=>window.portalGetThemes?.()||[],set:v=>{if(!v.length)throw Error('Conservez au moins une thématique.');window.portalApplyThemes?.(v)}}
-};
-let settingsEditKey=null;
-function renderSettingsCards(){const box=$('settingsCards');if(!box)return;box.innerHTML=Object.entries(settingsDefs).map(([key,d])=>{let vals=d.get();return `<article class="v2card"><div class="v2line"><h3>${safe(d.title)}</h3><button type="button" class="secondary" data-settings-edit="${key}">Modifier</button></div><p class="muted">${safe((vals||[]).join(d.single?'':' · ')||'Aucune valeur')}</p></article>`}).join('')}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-settings-edit]');if(!b)return;const d=settingsDefs[b.dataset.settingsEdit];if(!d)return;settingsEditKey=b.dataset.settingsEdit;$('settingsEditTitle').textContent='Modifier — '+d.title;$('settingsEditHelp').textContent=d.help;$('settingsEditText').value=(d.get()||[]).join('\n');$('settingsEditDialog').showModal()});
-function closeSettingsEdit(){$('settingsEditDialog').close();settingsEditKey=null}
-$('settingsEditClose').onclick=$('settingsEditCancel').onclick=closeSettingsEdit;
-$('settingsEditForm').onsubmit=async e=>{e.preventDefault();const d=settingsDefs[settingsEditKey];if(!d)return;let vals=d.single?[$('settingsEditText').value.trim()]:[...new Set($('settingsEditText').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean))];try{d.set(vals);save();refreshSelects();refreshConfig();render();if(typeof window.portalSaveSettingsCloud==='function')await window.portalSaveSettingsCloud();closeSettingsEdit();notice('Paramètres enregistrés.')}catch(err){alert(err.message||err)}};
-window.portalApplyCloudSettings=function(payload){if(!payload||typeof payload!=='object')return;if(Array.isArray(payload.commissions)&&payload.commissions.length)db.commissions=payload.commissions.map(String);if(payload.settings&&typeof payload.settings==='object')db.settings={...configDefaults,...payload.settings};if(Array.isArray(payload.themes)&&payload.themes.length)window.portalApplyThemes?.(payload.themes);save();refreshSelects();refreshConfig();render()};
-window.portalSettingsPayload=function(){return {commissions:[...db.commissions],settings:{...db.settings},themes:window.portalGetThemes?.()||[]}};
+function refreshConfig(){db.settings={...configDefaults,...(db.settings||{})};const pairs={elus:'cfgElus',agents:'cfgAgents',types:'cfgTypes',dStatuses:'cfgDStatuses',priorityLabels:'cfgPriorityLabels'};for(const [key,id] of Object.entries(pairs))$(id).value=(db.settings[key]||[]).join('\n');$('cfgCommune').value=db.settings.commune||'';const options=a=>(a||[]).map(x=>'<option value="'+safe(x)+'"></option>').join('');$('elusList').innerHTML=options(db.settings.elus);$('peopleList').innerHTML=options([...new Set([...(db.settings.elus||[]),...(db.settings.agents||[])])]);$('typesList').innerHTML=options(db.settings.types);const fillPeople=(id,values,placeholder)=>{const el=$(id),previous=el.value;const all=[...new Set(values.filter(Boolean))];el.innerHTML='<option value="">'+safe(placeholder)+'</option>'+all.map(v=>'<option value="'+safe(v)+'">'+safe(v)+'</option>').join('');if(previous&&!all.includes(previous))el.add(new Option(previous,previous));el.value=previous||'';};
+fillPeople('pilot',[...db.settings.elus,...db.tasks.map(t=>t.pilot)],'Sélectionner un élu');
+fillPeople('dPilot',[...db.settings.elus,...db.dossiers.map(d=>d.pilot)],'Sélectionner un élu');
+fillPeople('assignee',[...db.settings.elus,...db.settings.agents,...db.tasks.map(t=>t.assignee)],'Sélectionner un intervenant');
+fillPeople('subOwner',[...db.settings.elus,...db.settings.agents,...db.dossiers.flatMap(d=>(d.subtasks||[]).map(t=>t.owner))],'Sélectionner un responsable'); fillPeople('actionSubOwner',[...(db.settings.elus||[]),...(db.settings.agents||[]),...db.tasks.flatMap(t=>(t.subtasks||[]).map(x=>x.owner))],'Sélectionner un responsable');
+fillPeople('dType',[...db.settings.types,...db.dossiers.map(d=>d.type)],'Sélectionner un type');
+let current=$('dStatus')?.value||'À étudier';selectFill('dStatus',db.settings.dStatuses.length?db.settings.dStatuses:configDefaults.dStatuses);if(db.settings.dStatuses.includes(current))$('dStatus').value=current;}
+$('saveReferentials').onclick=()=>{let pairs={elus:'cfgElus',agents:'cfgAgents',types:'cfgTypes',dStatuses:'cfgDStatuses',priorityLabels:'cfgPriorityLabels'};for(let [key,id] of Object.entries(pairs))db.settings[key]=[...new Set($(id).value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean))];if(!db.settings.dStatuses.length)return alert('Conservez au moins un état de dossier.');db.settings.commune=$('cfgCommune').value.trim()||'Saint-Cyr-sur-le-Rhône';save();refreshConfig();notice('Référentiels enregistrés.');};
 refreshConfig();
 
 $('printRelances').onclick=()=>window.print();
