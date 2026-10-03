@@ -159,29 +159,37 @@ setInterval(()=>cloudAutoSync(),10000);
 
 // ===== V6.1 — Supabase Realtime : mise à jour sans recharger la page =====
 let cloudRealtimeChannel=null;
+let cloudLibraryRealtimeChannel=null;
 let cloudRealtimeTimer=null;
+let cloudLibraryRealtimeTimer=null;
 function cloudRealtimeRefresh(){
  clearTimeout(cloudRealtimeTimer);
  cloudRealtimeTimer=setTimeout(()=>cloudAutoSync(),250);
 }
 function cloudLibraryRealtimeRefresh(){
- clearTimeout(cloudRealtimeTimer);
- cloudRealtimeTimer=setTimeout(()=>{if(typeof window.portalRefreshLibrary==='function')window.portalRefreshLibrary()},250);
+ clearTimeout(cloudLibraryRealtimeTimer);
+ cloudLibraryRealtimeTimer=setTimeout(()=>{if(typeof window.portalRefreshLibrary==='function')window.portalRefreshLibrary()},250);
 }
 function cloudStartRealtime(){
- if(cloudRealtimeChannel)return;
- cloudRealtimeChannel=cloudClient.channel('portail-actions-live')
-  .on('postgres_changes',{event:'*',schema:'public',table:'actions'},cloudRealtimeRefresh)
-  .on('postgres_changes',{event:'*',schema:'public',table:'action_subtasks'},cloudRealtimeRefresh)
-  .on('postgres_changes',{event:'*',schema:'public',table:'portal_resources'},cloudLibraryRealtimeRefresh)
-  .subscribe(status=>{
-   if(status==='SUBSCRIBED'){cloudSetState('Temps réel actif',true);cloudMessage('Synchronisation temps réel active.')}
-  });
+ if(!cloudRealtimeChannel){
+  cloudRealtimeChannel=cloudClient.channel('portail-actions-live')
+   .on('postgres_changes',{event:'*',schema:'public',table:'actions'},cloudRealtimeRefresh)
+   .on('postgres_changes',{event:'*',schema:'public',table:'action_subtasks'},cloudRealtimeRefresh)
+   .subscribe();
+ }
+ if(!cloudLibraryRealtimeChannel){
+  cloudLibraryRealtimeChannel=cloudClient.channel('portail-library-live')
+   .on('postgres_changes',{event:'*',schema:'public',table:'portal_resources'},cloudLibraryRealtimeRefresh)
+   .subscribe(status=>{
+    if(status==='SUBSCRIBED'){cloudSetState('Temps réel actif',true);cloudMessage('Bibliothèque en temps réel active.')}
+    else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')console.warn('[Supabase Realtime Bibliothèque]',status);
+   });
+ }
 }
 async function cloudStopRealtime(){
- if(!cloudRealtimeChannel)return;
- const ch=cloudRealtimeChannel;cloudRealtimeChannel=null;
- try{await cloudClient.removeChannel(ch)}catch(e){console.warn('[Supabase Realtime]',e)}
+ const channels=[cloudRealtimeChannel,cloudLibraryRealtimeChannel].filter(Boolean);
+ cloudRealtimeChannel=null;cloudLibraryRealtimeChannel=null;
+ for(const ch of channels){try{await cloudClient.removeChannel(ch)}catch(e){console.warn('[Supabase Realtime]',e)}}
 }
 cloudClient.auth.onAuthStateChange((_event,session)=>{if(session)cloudStartRealtime();else cloudStopRealtime()});
 cloudClient.auth.getSession().then(({data})=>{if(data.session)cloudStartRealtime()});
