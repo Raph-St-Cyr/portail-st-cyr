@@ -181,8 +181,9 @@ function cloudStartRealtime(){
   cloudLibraryRealtimeChannel=cloudClient.channel('portail-library-live')
    .on('postgres_changes',{event:'*',schema:'public',table:'portal_resources'},cloudLibraryRealtimeRefresh)
    .subscribe(status=>{
-    if(status==='SUBSCRIBED'){cloudSetState('Temps réel actif',true);cloudMessage('Bibliothèque en temps réel active.')}
-    else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')console.warn('[Supabase Realtime Bibliothèque]',status);
+    const diag=document.getElementById('libraryRealtimeState');
+    if(diag){diag.textContent=status;diag.classList.toggle('ok',status==='SUBSCRIBED')}
+    console.info('[Supabase Realtime Bibliothèque]',status);
    });
  }
 }
