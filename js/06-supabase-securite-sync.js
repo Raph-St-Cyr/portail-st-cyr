@@ -92,6 +92,38 @@ async function cloudPull(silent=false){
  save();refreshSelects();render();cloudSetState('Synchronisé',true);
  if(!silent)cloudMessage((actions||[]).length+' action(s) synchronisée(s) depuis Supabase.');
 }
+
+// ===== V6.2.19 — Paramètres communs via portal_settings =====
+const PORTAL_SETTINGS_ID='municipal_config';
+function cloudSettingsPayload(){
+ return {
+  commissions:Array.isArray(db?.commissions)?[...db.commissions]:[],
+  settings:db?.settings?JSON.parse(JSON.stringify(db.settings)):{},
+  documentThemes:typeof window.portalGetLibraryThemes==='function'?window.portalGetLibraryThemes():[]
+ };
+}
+function cloudApplySettingsPayload(payload){
+ if(!payload||typeof payload!=='object')return;
+ let changed=false;
+ if(Array.isArray(payload.commissions)&&payload.commissions.length){db.commissions=[...new Set(payload.commissions.map(String))];changed=true}
+ if(payload.settings&&typeof payload.settings==='object'){db.settings={...db.settings,...payload.settings};changed=true}
+ if(changed){save();refreshSelects();refreshConfig();render()}
+ if(Array.isArray(payload.documentThemes)&&payload.documentThemes.length&&typeof window.portalApplyLibraryThemes==='function')window.portalApplyLibraryThemes(payload.documentThemes);
+}
+async function cloudPushSettings(){
+ const {data:{session}}=await cloudClient.auth.getSession();if(!session)return;
+ const row={id:PORTAL_SETTINGS_ID,payload:cloudSettingsPayload(),updated_at:new Date().toISOString()};
+ const {error}=await cloudClient.from('portal_settings').upsert(row,{onConflict:'id'});if(error)throw error;
+}
+async function cloudSyncSettings(){
+ const {data:{session}}=await cloudClient.auth.getSession();if(!session)return;
+ const {data,error}=await cloudClient.from('portal_settings').select('payload,updated_at').eq('id',PORTAL_SETTINGS_ID).maybeSingle();if(error)throw error;
+ if(!data){await cloudPushSettings();return 'seeded'}
+ cloudApplySettingsPayload(data.payload);return 'pulled';
+}
+window.portalPushSettings=cloudPushSettings;
+// ===== fin V6.2.19 =====
+
 let cloudAutoBusy=false;
 async function cloudAutoSync(){
  if(cloudAutoBusy||document.body.classList.contains('auth-locked'))return;
@@ -106,6 +138,7 @@ async function cloudAutoSync(){
   // Bibliothèque : utiliser la même synchronisation automatique que les Actions.
   // Cela garantit la récupération des ressources Supabase même si postgres_changes ne livre aucun événement.
   if(typeof window.portalRefreshLibrary==='function') await window.portalRefreshLibrary();
+  await cloudSyncSettings();
   cloudSetState('Synchronisé',true);
   cloudMessage('Synchronisation automatique : '+new Date().toLocaleTimeString('fr-FR'));
  }catch(err){cloudSoftError(err)}

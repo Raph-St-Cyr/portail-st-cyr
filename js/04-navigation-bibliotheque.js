@@ -14,6 +14,17 @@ function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 function themes(){try{let a=JSON.parse(localStorage.getItem(THEMEKEY));if(Array.isArray(a)&&a.length)return [...new Set(a)]}catch(e){}return [...defaultThemes]}
 function storeThemes(a){localStorage.setItem(THEMEKEY,JSON.stringify(a))}
 let currentThemes=themes();
+// V6.2.19 — accès contrôlé aux thématiques pour la synchronisation des paramètres.
+window.portalGetLibraryThemes=()=>[...currentThemes];
+window.portalApplyLibraryThemes=(incoming)=>{
+ if(!Array.isArray(incoming)||!incoming.length)return;
+ currentThemes=[...new Set(incoming.map(String).map(x=>x.trim()).filter(Boolean))];
+ if(!currentThemes.length)return;
+ storeThemes(currentThemes);
+ updateThemeSelectors();
+ if(typeof themeRows==='function' && el('themeDialog')?.open)themeRows();
+ renderDocs();
+};
 const DOCVIEWKEY='saintcyr.portal.documentView.v1';let docView=localStorage.getItem(DOCVIEWKEY)==='list'?'list':'folders';
 function updateThemeSelectors(){let previous=el('docCategory').value,filter=el('docFilter').value;el('docCategory').innerHTML=currentThemes.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');if(currentThemes.includes(previous))el('docCategory').value=previous;el('docFilter').innerHTML='<option value="">Toutes les thématiques</option>'+currentThemes.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');if(currentThemes.includes(filter))el('docFilter').value=filter}
 function updateCommissions(){let sel=el('docCommission'),old=sel.value;sel.innerHTML='<option value="">Sans commission</option>'+db.commissions.map(x=>'<option>'+esc(x)+'</option>').join('');sel.value=old||'';let filter=el('docCommissionFilter'),filterOld=filter.value;filter.innerHTML='<option value="">Toutes les commissions</option><option value="__none__">Sans commission</option>'+db.commissions.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');filter.value=[...filter.options].some(o=>o.value===filterOld)?filterOld:''}
@@ -90,8 +101,8 @@ el('docThemeChips').onclick=e=>{let b=e.target.closest('[data-theme]');if(b){el(
 function themeRows(){el('themeRows').innerHTML=currentThemes.map((t,i)=>`<div class="theme-row"><span>${esc(t)}</span><div><button type="button" class="secondary" data-rename-theme="${i}">Renommer</button><button type="button" class="secondary" data-delete-theme="${i}">Supprimer</button></div></div>`).join('')}
 el('manageThemes').onclick=()=>{themeRows();el('themeDialog').showModal()};
 el('closeThemes').onclick=el('themeDone').onclick=()=>el('themeDialog').close();
-el('themeForm').onsubmit=e=>{e.preventDefault();let t=el('newThemeName').value.trim();if(!t)return;if(currentThemes.some(x=>x.toLowerCase()===t.toLowerCase()))return alert('Cette thématique existe déjà.');currentThemes.push(t);storeThemes(currentThemes);el('newThemeName').value='';themeRows();updateThemeSelectors();renderDocs()};
+el('themeForm').onsubmit=e=>{e.preventDefault();let t=el('newThemeName').value.trim();if(!t)return;if(currentThemes.some(x=>x.toLowerCase()===t.toLowerCase()))return alert('Cette thématique existe déjà.');currentThemes.push(t);storeThemes(currentThemes);el('newThemeName').value='';themeRows();updateThemeSelectors();renderDocs();if(typeof window.portalPushSettings==='function')window.portalPushSettings().catch(console.error)};
 el('themeRows').onclick=async e=>{let rename=e.target.closest('[data-rename-theme]'),del=e.target.closest('[data-delete-theme]');if(!rename&&!del)return;let i=Number((rename||del).dataset.renameTheme??del?.dataset.deleteTheme),old=currentThemes[i];if(!old)return;let docs=await allDocs();if(rename){let n=prompt('Nouveau nom de la thématique :',old);if(n===null)return;n=n.trim();if(!n||currentThemes.some((t,j)=>j!==i&&t.toLowerCase()===n.toLowerCase()))return alert('Nom vide ou déjà utilisé.');for(let d of docs.filter(d=>d.category===old)){d.category=n;await transact('readwrite',store=>store.put(d));if(d.url)await cloudSaveDoc(d)}currentThemes[i]=n}else{if(docs.some(d=>d.category===old))return alert('Cette thématique contient des ressources. Déplacez-les ou renommez le thème avant de le supprimer.');if(!confirm('Supprimer la thématique « '+old+' » ?'))return;currentThemes.splice(i,1);if(!currentThemes.length)currentThemes=['Autres documents']}
-storeThemes(currentThemes);themeRows();updateThemeSelectors();renderDocs()};
+storeThemes(currentThemes);themeRows();updateThemeSelectors();renderDocs();if(typeof window.portalPushSettings==='function')window.portalPushSettings().catch(console.error)};
 el('portalToday').textContent=new Intl.DateTimeFormat('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date());showModule('home');
 })();
