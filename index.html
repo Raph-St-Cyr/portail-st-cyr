@@ -65,7 +65,7 @@ button,input,select,textarea{touch-action:manipulation}
 </div>
 <div class="welcome-footer"><span>Application locale · Données non synchronisées entre utilisateurs</span><button type="button" class="secondary" id="portalCustomize">⚙ Personnaliser l’accueil</button></div>
 </div></div></div><div id="portalPilotage" hidden><header><button id="portalBack" class="secondary">← Accueil</button><div><h1>Pilotage municipal</h1><small>Saint-Cyr-sur-le-Rhône · Tableau de suivi des actions</small></div><button class="secondary" id="addTop">＋ Nouvelle action</button></header><main><div id="notice" role="status"></div><nav aria-label="Vues"><button data-view="dashboard" class="active">Vue générale</button><button data-view="list">Toutes les actions</button><button data-view="kanban">Kanban</button><button data-view="decisions">Décisions à prendre</button><button data-view="settings" class="settings-nav-btn">Paramètres / sauvegarde</button><button data-view="dossiersView">Dossiers</button><button data-view="relancesView">Relances</button><button data-view="reunionsView">Réunions</button></nav><section id="dashboard"><div class="stats" id="stats"></div><div class="panel"><div class="section-title"><h2>À surveiller en priorité</h2><button class="secondary" data-goto="list">Voir toutes les actions</button></div><div class="scroll" id="priorityDashboard"></div></div><div class="panel" style="margin-top:14px"><h2>Répartition par commission</h2><div id="byCommission" class="grid"></div></div></section><section id="list" class="hidden"><div class="toolbar"><input id="search" aria-label="Rechercher" placeholder="Rechercher une action, un pilote, un dossier…"><select id="fCommission" aria-label="Filtrer par commission"></select><select id="fPriority" aria-label="Filtrer par priorité"><option value="">Toutes les priorités</option><option value="P1">P1 — Critique</option><option value="P2">P2 — Urgent</option><option value="P3">P3 — Normal</option><option value="P4">P4 — Secondaire</option></select><select id="fStatus" aria-label="Filtrer par état"></select><button class="secondary" id="exportCsv">Exporter CSV</button></div><div class="panel scroll" id="listTable"></div></section><section id="kanban" class="hidden"><p class="muted">Glisser-déposer une carte pour modifier son état, ou cliquer pour ouvrir sa fiche.</p><div id="board" class="grid"></div></section><section id="decisions" class="hidden"><div class="panel"><h2>Décisions attendues</h2><p class="muted">Actions cochées « Décision à prendre », hors dossiers terminés et abandonnés.</p><div class="scroll" id="decisionTable"></div><button id="printDecisions" class="secondary">Imprimer l'ordre du jour</button></div></section><section id="settings" class="hidden"><div class="panel cloud-panel">
-<div class="section-title"><h2>Synchronisation Supabase — test V5.5</h2><span id="cloudState" class="pill">Déconnecté</span></div>
+<div class="section-title"><h2>Synchronisation Supabase — test V5.6</h2><span id="cloudState" class="pill">Déconnecté</span></div>
 <p class="muted">Cette version conserve la sauvegarde locale et ajoute une synchronisation de test des <strong>Actions + sous-tâches</strong>.</p>
 <div class="fields">
 <label class="wide">E-mail de connexion<input id="cloudEmail" type="email" autocomplete="username" placeholder="Votre adresse e-mail"></label>
@@ -104,7 +104,7 @@ button,input,select,textarea{touch-action:manipulation}
 <div id="classNone" class="hidden"><p class="hint">Cette action ne sera rattachée à aucun dossier.</p></div></div><label>Date de relance<input id="reminder" type="date"></label><label>Référence du dossier<input id="reference" placeholder="Ex. VOIRIE-2026-01"></label><label>Priorité<select id="priority"><option value="P1">P1 — Critique</option><option value="P2">P2 — Urgent</option><option value="P3" selected>P3 — Normal</option><option value="P4">P4 — Secondaire</option></select></label><label>État<select id="status"></select></label><label>Élu pilote<select id="pilot"></select></label><label>Chargé de l'exécution<select id="assignee"></select></label><label>Date de création<input id="created" type="date"></label><label>Échéance<input id="due" type="date"></label><label class="wide">Lien vers un document<input id="link" type="url" placeholder="https://…"></label><label class="wide" style="display:block"><input id="decision" type="checkbox" style="width:auto"> Décision à prendre en réunion / conseil</label><label class="wide">Ajouter une note à l'historique<textarea id="note" rows="2" placeholder="Compte rendu, relance, décision…"></textarea></label></div><div class="action-subtasks"><h3>Sous-tâches de cette action <span id="actionProgress" class="muted"></span></h3><p class="muted">Les étapes cochées contribuent à l'avancement de l'action, puis du dossier parent.</p><div id="actionSubRows"></div><div class="fields"><label class="wide">Nouvelle étape<input id="actionSubTitle" placeholder="Ex. Demander trois devis"></label><label>Responsable<select id="actionSubOwner"></select></label><label>Échéance<input type="date" id="actionSubDue"></label></div><button type="button" class="secondary" id="actionAddSub">+ Ajouter une sous-tâche</button></div><div id="historyWrap" class="hidden"><h3>Historique</h3><div id="history" class="timeline"></div></div><div class="actions"><button type="button" class="danger hidden" id="deleteTask">Supprimer</button><button type="button" class="secondary" id="cancel">Annuler</button><button type="submit">Enregistrer l'action</button></div></form></dialog>
 <!-- MODULE 01 · Données et actions : maintenir les dépendances et cet ordre -->
 <!-- MODULE MÉTIER : scripts regroupés pour garantir la portée et le chargement des fonctions -->
-<script data-module="01 · Moteur de pilotage">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script data-module="01 · Moteur de pilotage">
 
 'use strict';const configDefaults={elus:[],agents:[],types:['Travaux','Étude','Organisation','Administratif','Événement','Autre'],dStatuses:['À étudier','À décider','En cours','En attente','Bloqué','Terminé','Archivé'],priorityLabels:['P1 : Critique','P2 : Urgent','P3 : Normal','P4 : Secondaire'],commune:'Saint-Cyr-sur-le-Rhône'};const KEY='saintcyr.pilotage.v2';const defaults=['Voirie et réseaux','Bâtiments communaux','École et périscolaire','Finances','Vie associative et événements','Urbanisme et environnement','Administration générale','Communication'];const statuses=['À étudier','À décider','À engager','En cours','En attente d’un tiers','Bloqué','Terminé','Abandonné'];const $=id=>document.getElementById(id);const iso=()=>new Date().toISOString().slice(0,10);let db;try{db=JSON.parse(localStorage.getItem(KEY))||JSON.parse(localStorage.getItem('saintcyr.pilotage.v1'))||{version:2,commissions:defaults,tasks:[]}}catch{db={version:2,commissions:defaults,tasks:[]}};if(!Array.isArray(db.tasks)||!Array.isArray(db.commissions))db={version:1,commissions:defaults,tasks:[]};db.dossiers ||= []; db.meetings ||= []; db.settings ||= {elus:[],agents:[],types:['Travaux','Étude','Organisation','Administratif','Événement','Autre'],dStatuses:['À étudier','À décider','En cours','En attente','Bloqué','Terminé','Archivé'],priorityLabels:['P1 : Critique','P2 : Urgent','P3 : Normal','P4 : Secondaire'],commune:'Saint-Cyr-sur-le-Rhône'}; db.version=2; const save=()=>{try{
  db.meta ||= {};
@@ -296,12 +296,10 @@ update();
 })();
 
 
-// ===== V5.5 — Synchronisation Supabase de test =====
+// ===== V5.6 — Synchronisation Supabase via client officiel =====
 const SUPABASE_URL='https://zjgeasltefdmuffbmgbo.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_tIfKzUoWZftPkuosQ03FtA_1d0DEw_J';
-const CLOUD_SESSION_KEY='saintcyr.supabase.session.v1';
-let cloudSession=null;
-try{cloudSession=JSON.parse(localStorage.getItem(CLOUD_SESSION_KEY)||'null')}catch{cloudSession=null}
+const cloudClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 
 function cloudSetState(text,ok=false){
  const el=$('cloudState'); if(!el)return;
@@ -311,79 +309,74 @@ function cloudMessage(text){if($('cloudDetails'))$('cloudDetails').textContent=t
 function cloudSoftError(err){console.error('[Supabase]',err);cloudSetState('Erreur',false);cloudMessage('Supabase : '+(err?.message||err))}
 function uuidOk(v){return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v||''))}
 function ensureCloudIds(t){
- if(!uuidOk(t.id)){
-   const old=t.id;t.id=crypto.randomUUID();
-   (db.dossiers||[]).forEach(d=>{if(d.taskId===old)d.taskId=t.id});
- }
+ if(!uuidOk(t.id))t.id=crypto.randomUUID();
  (t.subtasks||[]).forEach(st=>{if(!uuidOk(st.id))st.id=crypto.randomUUID()});
-}
-function cloudHeaders(extra={}){
- if(!cloudSession?.access_token)throw new Error('Connectez-vous d’abord à Supabase.');
- return {'apikey':SUPABASE_PUBLISHABLE_KEY,'Authorization':'Bearer '+cloudSession.access_token,'Content-Type':'application/json',...extra};
-}
-async function cloudFetch(path,options={}){
- const res=await fetch(SUPABASE_URL+path,options);
- let body=null; const txt=await res.text(); if(txt){try{body=JSON.parse(txt)}catch{body=txt}}
- if(!res.ok)throw new Error((body&&body.message)||(body&&body.error_description)||(body&&body.error)||('HTTP '+res.status));
- return body;
 }
 async function cloudLogin(){
  const email=$('cloudEmail').value.trim(),password=$('cloudPassword').value;
  if(!email||!password)throw new Error('Indiquez votre e-mail et votre mot de passe.');
- const session=await cloudFetch('/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':SUPABASE_PUBLISHABLE_KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password})});
- cloudSession=session;localStorage.setItem(CLOUD_SESSION_KEY,JSON.stringify(session));
- $('cloudPassword').value=''; cloudSetState('Connecté',true); cloudMessage('Connexion Supabase réussie : '+(session.user?.email||email));
- return session;
+ const {data,error}=await cloudClient.auth.signInWithPassword({email,password});
+ if(error)throw error;
+ $('cloudPassword').value='';
+ cloudSetState('Connecté',true);
+ cloudMessage('Connexion Supabase réussie : '+(data.user?.email||email));
+ return data;
 }
-function cloudLogout(){
- cloudSession=null;localStorage.removeItem(CLOUD_SESSION_KEY);cloudSetState('Déconnecté',false);cloudMessage('Session Supabase supprimée de ce navigateur.');
+async function cloudLogout(){
+ const {error}=await cloudClient.auth.signOut(); if(error)throw error;
+ cloudSetState('Déconnecté',false);cloudMessage('Session Supabase supprimée de ce navigateur.');
 }
 function actionCloudRow(t){
- return {
-  id:t.id,title:t.title||'',description:t.description||null,commission:t.commission||null,reference:t.reference||null,
-  priority:t.priority||'P3',status:t.status||'À faire',pilot:t.pilot||null,assignee:t.assignee||null,
-  created:t.created||null,due:t.due||null,reminder:t.reminder||null,decision:!!t.decision,link:t.link||null,
-  dossier_id:uuidOk(t.dossierId)?t.dossierId:null,updated_at:new Date().toISOString()
- };
+ return {id:t.id,title:t.title||'',description:t.description||null,commission:t.commission||null,reference:t.reference||null,
+ priority:t.priority||'P3',status:t.status||'À faire',pilot:t.pilot||null,assignee:t.assignee||null,
+ created:t.created||null,due:t.due||null,reminder:t.reminder||null,decision:!!t.decision,link:t.link||null,
+ dossier_id:uuidOk(t.dossierId)?t.dossierId:null,updated_at:new Date().toISOString()};
+}
+async function cloudRequireUser(){
+ const {data,error}=await cloudClient.auth.getUser(); if(error||!data.user)throw error||new Error('Connectez-vous d’abord à Supabase.');
+ return data.user;
 }
 async function cloudUpsertAction(t){
- if(!cloudSession?.access_token)return;
- ensureCloudIds(t); save();
- await cloudFetch('/rest/v1/actions?on_conflict=id',{method:'POST',headers:cloudHeaders({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(actionCloudRow(t))});
- await cloudFetch('/rest/v1/action_subtasks?action_id=eq.'+encodeURIComponent(t.id),{method:'DELETE',headers:cloudHeaders()});
+ const {data:{session}}=await cloudClient.auth.getSession(); if(!session)return;
+ ensureCloudIds(t);save();
+ let {error}=await cloudClient.from('actions').upsert(actionCloudRow(t),{onConflict:'id'});
+ if(error)throw error;
+ ({error}=await cloudClient.from('action_subtasks').delete().eq('action_id',t.id)); if(error)throw error;
  const rows=(t.subtasks||[]).map(st=>({id:st.id,action_id:t.id,title:st.title||'',owner:st.owner||null,due:st.due||null,done:!!st.done}));
- if(rows.length)await cloudFetch('/rest/v1/action_subtasks',{method:'POST',headers:cloudHeaders({'Prefer':'return=minimal'}),body:JSON.stringify(rows)});
+ if(rows.length){({error}=await cloudClient.from('action_subtasks').insert(rows));if(error)throw error;}
  cloudSetState('Synchronisé',true);cloudMessage('Dernière synchronisation : '+new Date().toLocaleString('fr-FR'));
 }
 async function cloudDeleteAction(id){
- if(!cloudSession?.access_token||!uuidOk(id))return;
- await cloudFetch('/rest/v1/actions?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:cloudHeaders()});
+ const {data:{session}}=await cloudClient.auth.getSession(); if(!session||!uuidOk(id))return;
+ const {error}=await cloudClient.from('actions').delete().eq('id',id);if(error)throw error;
  cloudSetState('Synchronisé',true);cloudMessage('Suppression répercutée dans Supabase.');
 }
 async function cloudPushAll(){
- if(!cloudSession?.access_token)throw new Error('Connectez-vous d’abord.');
+ await cloudRequireUser();
  for(const t of db.tasks)await cloudUpsertAction(t);
  save();render();cloudSetState('Synchronisé',true);cloudMessage(db.tasks.length+' action(s) locale(s) envoyée(s) vers Supabase.');
 }
 async function cloudPull(){
- if(!cloudSession?.access_token)throw new Error('Connectez-vous d’abord.');
- const actions=await cloudFetch('/rest/v1/actions?select=*&order=created_at.asc',{headers:cloudHeaders()});
- const subs=await cloudFetch('/rest/v1/action_subtasks?select=*',{headers:cloudHeaders()});
+ await cloudRequireUser();
+ let {data:actions,error}=await cloudClient.from('actions').select('*').order('created_at',{ascending:true});if(error)throw error;
+ let {data:subs,error:subError}=await cloudClient.from('action_subtasks').select('*');if(subError)throw subError;
  const byAction={};(subs||[]).forEach(st=>(byAction[st.action_id]??=[]).push({id:st.id,title:st.title,owner:st.owner||'',due:st.due||'',done:!!st.done}));
  const localById=new Map(db.tasks.map(t=>[t.id,t]));
  (actions||[]).forEach(a=>{
-   const prior=localById.get(a.id)||{history:[]};
-   const t={...prior,id:a.id,title:a.title||'',description:a.description||'',commission:a.commission||'',reference:a.reference||'',priority:a.priority||'P3',status:a.status||'',pilot:a.pilot||'',assignee:a.assignee||'',created:a.created||'',due:a.due||'',reminder:a.reminder||'',decision:!!a.decision,link:a.link||'',dossierId:a.dossier_id||'',subtasks:byAction[a.id]||[]};
-   if(localById.has(a.id))Object.assign(localById.get(a.id),t);else db.tasks.push(t);
+  const prior=localById.get(a.id)||{history:[]};
+  const t={...prior,id:a.id,title:a.title||'',description:a.description||'',commission:a.commission||'',reference:a.reference||'',priority:a.priority||'P3',status:a.status||'',pilot:a.pilot||'',assignee:a.assignee||'',created:a.created||'',due:a.due||'',reminder:a.reminder||'',decision:!!a.decision,link:a.link||'',dossierId:a.dossier_id||'',subtasks:byAction[a.id]||[]};
+  if(localById.has(a.id))Object.assign(localById.get(a.id),t);else db.tasks.push(t);
  });
  save();refreshSelects();render();cloudSetState('Synchronisé',true);cloudMessage((actions||[]).length+' action(s) chargée(s) depuis Supabase.');
 }
 $('cloudLogin').onclick=()=>cloudLogin().catch(cloudSoftError);
-$('cloudLogout').onclick=()=>cloudLogout();
+$('cloudLogout').onclick=()=>cloudLogout().catch(cloudSoftError);
 $('cloudPushAll').onclick=()=>{if(confirm('Envoyer toutes les actions locales vers Supabase ?'))cloudPushAll().catch(cloudSoftError)};
 $('cloudPull').onclick=()=>cloudPull().catch(cloudSoftError);
-if(cloudSession?.access_token){cloudSetState('Session mémorisée',true);cloudMessage('Session Supabase présente sur ce navigateur. Vous pouvez charger ou envoyer les actions.')}else cloudSetState('Déconnecté',false);
-// ===== fin V5.5 =====
+cloudClient.auth.getSession().then(({data})=>{
+ if(data.session){cloudSetState('Session mémorisée',true);cloudMessage('Session Supabase présente sur ce navigateur.')}else cloudSetState('Déconnecté',false);
+}).catch(cloudSoftError);
+// ===== fin V5.6 =====
 
 (function verifyUniqueIds(){const seen=new Set(),dupes=new Set();document.querySelectorAll('[id]').forEach(n=>seen.has(n.id)?dupes.add(n.id):seen.add(n.id));if(dupes.size)console.error('[Portail municipal] IDs HTML dupliqués :',[...dupes]);})();
 </script></body></html>
