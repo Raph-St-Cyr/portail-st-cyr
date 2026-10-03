@@ -122,10 +122,16 @@ async function cloudSyncSettings(){
  cloudApplySettingsPayload(data.payload);return 'pulled';
 }
 window.portalPushSettings=cloudPushSettings;
+// V6.2.21 : protéger uniquement les saisies en cours de la zone Paramètres.
+// La synchronisation Actions / Dossiers / Bibliothèque continue normalement en arrière-plan.
+let portalSettingsDirty=false;
+const portalSettingsEditIds=new Set(['commissionEdit','cfgElus','cfgAgents','cfgTypes','cfgDStatuses','cfgPriorityLabels','cfgCommune','newThemeName']);
+document.addEventListener('input',e=>{if(e.target&&portalSettingsEditIds.has(e.target.id))portalSettingsDirty=true},true);
+document.addEventListener('change',e=>{if(e.target&&portalSettingsEditIds.has(e.target.id))portalSettingsDirty=true},true);
 function cloudSettingsEditing(){
  const a=document.activeElement;
- const editIds=new Set(['commissionEdit','cfgElus','cfgAgents','cfgTypes','cfgDStatuses','cfgPriorityLabels','cfgCommune','newThemeName']);
- if(a&&editIds.has(a.id))return true;
+ if(portalSettingsDirty)return true;
+ if(a&&portalSettingsEditIds.has(a.id))return true;
  const themeDialog=document.getElementById('themeManager');
  return !!(themeDialog&&themeDialog.open&&themeDialog.contains(a));
 }
@@ -133,7 +139,8 @@ async function cloudPullSettingsSafely(){
  if(cloudSettingsEditing())return 'editing';
  return cloudSyncSettings();
 }
-// ===== fin V6.2.20 =====
+window.portalSettingsSaved=()=>{portalSettingsDirty=false};
+// ===== fin V6.2.21 =====
 
 let cloudAutoBusy=false;
 async function cloudAutoSync(){
@@ -149,8 +156,8 @@ async function cloudAutoSync(){
   // Bibliothèque : utiliser la même synchronisation automatique que les Actions.
   // Cela garantit la récupération des ressources Supabase même si postgres_changes ne livre aucun événement.
   if(typeof window.portalRefreshLibrary==='function') await window.portalRefreshLibrary();
-  // V6.2.27 : aucun pull automatique des paramètres.
-  // Actions, dossiers et bibliothèque conservent leur synchronisation automatique.
+  // Les paramètres restent synchronisés automatiquement, mais jamais pendant une saisie.
+  await cloudPullSettingsSafely();
   cloudSetState('Synchronisé',true);
   cloudMessage('Synchronisation automatique : '+new Date().toLocaleTimeString('fr-FR'));
  }catch(err){cloudSoftError(err)}
@@ -200,7 +207,7 @@ async function authGateLogin(){
 authLoginBtn.addEventListener('click',()=>authGateLogin().catch(err=>{authLoginBtn.disabled=false;authGateStatus.className='auth-status error';authGateStatus.textContent='Connexion impossible : '+(err?.message||err)}));
 authPassword.addEventListener('keydown',e=>{if(e.key==='Enter')authLoginBtn.click()});
 cloudClient.auth.getSession().then(({data})=>{setPortalAccess(data.session);if(data.session)setTimeout(async()=>{try{await cloudPullSettingsSafely()}catch(err){cloudSoftError(err)}cloudAutoSync()},0)}).catch(err=>{authGateStatus.className='auth-status error';authGateStatus.textContent='Vérification impossible : '+(err?.message||err)});
-cloudClient.auth.onAuthStateChange((_event,session)=>{setPortalAccess(session);if(session)setTimeout(()=>cloudAutoSync(),0)});
+cloudClient.auth.onAuthStateChange((_event,session)=>{setPortalAccess(session);if(session)setTimeout(async()=>{try{await cloudPullSettingsSafely()}catch(err){cloudSoftError(err)}cloudAutoSync()},0)});
 window.addEventListener('focus',()=>cloudAutoSync());
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)cloudAutoSync()});
 setInterval(()=>cloudAutoSync(),10000);
