@@ -7,7 +7,7 @@ function validLink(raw){try{let u=new URL(raw);return ['https:','http:'].include
 function loadThemes(){try{let x=JSON.parse(localStorage.getItem(THEMEKEY));if(Array.isArray(x)&&x.length)return [...new Set(x)]}catch{}return [...defaultThemes]}
 function saveThemes(){localStorage.setItem(THEMEKEY,JSON.stringify(currentThemes))}
 function showModule(module){el('portalHome').hidden=module!=='home';el('portalPilotage').hidden=module!=='pilotage';el('portalLibrary').hidden=module!=='library';if(module==='library'){refreshLibrarySelectors();loadResources()}window.scrollTo(0,0)}
-document.querySelectorAll('.portal-tile[data-module]').forEach(b=>b.addEventListener('click',()=>showModule(b.dataset.module)));
+window.showPortalModule=showModule;document.addEventListener('click',e=>{const b=e.target.closest('.portal-tile[data-module]');if(b){e.preventDefault();showModule(b.dataset.module)}});
 el('portalBack').onclick=el('libraryBack').onclick=()=>{el('portalToday').textContent=new Intl.DateTimeFormat('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date());showModule('home')};
 el('homeSettings').onclick=()=>{showModule('pilotage');show('settings')};
 function refreshLibrarySelectors(){
