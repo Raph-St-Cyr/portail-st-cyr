@@ -102,7 +102,7 @@ body.auth-locked #mobileBottomNav{display:none!important}
 </div>
 <div class="welcome-footer"><span>Application locale · Données non synchronisées entre utilisateurs</span><button type="button" class="secondary" id="portalCustomize">⚙ Personnaliser l’accueil</button></div>
 </div></div></div><div id="portalPilotage" hidden><header><button id="portalBack" class="secondary">← Accueil</button><div><h1>Pilotage municipal</h1><small>Saint-Cyr-sur-le-Rhône · Tableau de suivi des actions</small></div><button class="secondary" id="addTop">＋ Nouvelle action</button></header><main><div id="notice" role="status"></div><nav aria-label="Vues"><button data-view="dashboard" class="active">Vue générale</button><button data-view="list">Toutes les actions</button><button data-view="kanban">Kanban</button><button data-view="decisions">Décisions à prendre</button><button data-view="settings" class="settings-nav-btn">Paramètres / sauvegarde</button><button data-view="dossiersView">Dossiers</button><button data-view="relancesView">Relances</button><button data-view="reunionsView">Réunions</button></nav><section id="dashboard"><div class="stats" id="stats"></div><div class="panel"><div class="section-title"><h2>À surveiller en priorité</h2><button class="secondary" data-goto="list">Voir toutes les actions</button></div><div class="scroll" id="priorityDashboard"></div></div><div class="panel" style="margin-top:14px"><h2>Répartition par commission</h2><div id="byCommission" class="grid"></div></div></section><section id="list" class="hidden"><div class="toolbar"><input id="search" aria-label="Rechercher" placeholder="Rechercher une action, un pilote, un dossier…"><select id="fCommission" aria-label="Filtrer par commission"></select><select id="fPriority" aria-label="Filtrer par priorité"><option value="">Toutes les priorités</option><option value="P1">P1 — Critique</option><option value="P2">P2 — Urgent</option><option value="P3">P3 — Normal</option><option value="P4">P4 — Secondaire</option></select><select id="fStatus" aria-label="Filtrer par état"></select><button class="secondary" id="exportCsv">Exporter CSV</button></div><div class="panel scroll" id="listTable"></div></section><section id="kanban" class="hidden"><p class="muted">Glisser-déposer une carte pour modifier son état, ou cliquer pour ouvrir sa fiche.</p><div id="board" class="grid"></div></section><section id="decisions" class="hidden"><div class="panel"><h2>Décisions attendues</h2><p class="muted">Actions cochées « Décision à prendre », hors dossiers terminés et abandonnés.</p><div class="scroll" id="decisionTable"></div><button id="printDecisions" class="secondary">Imprimer l'ordre du jour</button></div></section><section id="settings" class="hidden"><div class="panel cloud-panel">
-<div class="section-title"><h2>Synchronisation Supabase — V5.9</h2><span id="cloudState" class="pill">Déconnecté</span></div>
+<div class="section-title"><h2>Synchronisation Supabase — V6.0 automatique</h2><span id="cloudState" class="pill">Déconnecté</span></div>
 <p class="muted">Cette version conserve la sauvegarde locale et ajoute une synchronisation de test des <strong>Actions + sous-tâches</strong>.</p>
 <div class="fields">
 <label class="wide">E-mail de connexion<input id="cloudEmail" type="email" autocomplete="username" placeholder="Votre adresse e-mail"></label>
@@ -184,7 +184,7 @@ if(classMode==='new'){const title=$('inlineDossierTitle').value.trim();if(!title
 else if(classMode==='none')t.dossierId='';
 t.subtasks=pendingActionSubs.map(x=>({...x}));t.decision=$('decision').checked;let n=$('note').value.trim();t.history.push({at:new Date().toLocaleString('fr-FR'),text:n||(old?'Fiche mise à jour':'Action créée')});if(old)Object.assign(old,t);else db.tasks.push(t);
 if(!save()){if(old&&oldSnapshot){Object.keys(old).forEach(k=>delete old[k]);Object.assign(old,oldSnapshot)}else db.tasks=db.tasks.filter(x=>x.id!==t.id);return;}
-$('editor').close();render();notice('Action enregistrée et sauvegardée.');cloudUpsertAction(t).catch(err=>cloudSoftError(err))};$('deleteTask').onclick=()=>{if(confirm('Supprimer définitivement cette action ?')){const deletedId=$('taskId').value;db.tasks=db.tasks.filter(t=>t.id!==deletedId);save();$('editor').close();render();notice('Action supprimée.');cloudDeleteAction(deletedId).catch(err=>cloudSoftError(err))}};let dragged=null;document.addEventListener('dragstart',e=>{dragged=e.target.closest('[data-drag]')?.dataset.drag||null});document.addEventListener('dragover',e=>{if(e.target.closest('[data-drop]'))e.preventDefault()});document.addEventListener('drop',e=>{let col=e.target.closest('[data-drop]'),t=db.tasks.find(t=>t.id===dragged);if(col&&t){e.preventDefault();t.status=col.dataset.drop;t.history.push({at:new Date().toLocaleString('fr-FR'),text:'État modifié : '+t.status});save();render();cloudUpsertAction(t).catch(err=>cloudSoftError(err))}dragged=null});function download(name,body,mime){let u=URL.createObjectURL(new Blob([body],{type:mime})),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}$('backup').onclick=()=>download('pilotage-saint-cyr-'+iso()+'.json',JSON.stringify(db,null,2),'application/json');$('exportCsv').onclick=()=>{let cols=['reference','title','description','commission','priority','status','pilot','assignee','created','due','decision','link'];let csv='\ufeff'+[cols.join(';'),...db.tasks.map(t=>cols.map(k=>'"'+String(t[k]??'').replaceAll('"','""')+'"').join(';'))].join('\r\n');download('actions-saint-cyr-'+iso()+'.csv',csv,'text/csv;charset=utf-8')};$('restore').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let obj=JSON.parse(await f.text());if(!Array.isArray(obj.tasks)||!Array.isArray(obj.commissions)||obj.tasks.some(t=>!t.id||!t.title||!t.status||!t.priority))throw Error('Format non reconnu');if(confirm('Remplacer toutes les données actuelles par cette sauvegarde ?')){db={version:2,commissions:obj.commissions.map(String),tasks:obj.tasks,dossiers:Array.isArray(obj.dossiers)?obj.dossiers:[],meetings:Array.isArray(obj.meetings)?obj.meetings:[],settings:obj.settings&&typeof obj.settings==='object'?obj.settings:db.settings};save();refreshSelects();refreshConfig();render();notice('Sauvegarde importée.')}}catch(err){alert('Import impossible : '+err.message)}e.target.value=''};$('saveCommissions').onclick=()=>{let arr=[...new Set($('commissionEdit').value.split(',').map(x=>x.trim()).filter(Boolean))];if(!arr.length)return alert('Indiquer au moins une commission.');db.commissions=[...new Set([...arr,...db.tasks.map(t=>t.commission).filter(Boolean)])];save();function storageDiagnostic(){
+$('editor').close();render();notice('Action enregistrée et sauvegardée.');cloudMarkPending(t.id);cloudUpsertAction(t).catch(err=>cloudSoftError(err))};$('deleteTask').onclick=()=>{if(confirm('Supprimer définitivement cette action ?')){const deletedId=$('taskId').value;db.tasks=db.tasks.filter(t=>t.id!==deletedId);save();$('editor').close();render();notice('Action supprimée.');cloudMarkDelete(deletedId);cloudClearPending(deletedId);cloudDeleteAction(deletedId).catch(err=>cloudSoftError(err))}};let dragged=null;document.addEventListener('dragstart',e=>{dragged=e.target.closest('[data-drag]')?.dataset.drag||null});document.addEventListener('dragover',e=>{if(e.target.closest('[data-drop]'))e.preventDefault()});document.addEventListener('drop',e=>{let col=e.target.closest('[data-drop]'),t=db.tasks.find(t=>t.id===dragged);if(col&&t){e.preventDefault();t.status=col.dataset.drop;t.history.push({at:new Date().toLocaleString('fr-FR'),text:'État modifié : '+t.status});save();render();cloudMarkPending(t.id);cloudUpsertAction(t).catch(err=>cloudSoftError(err))}dragged=null});function download(name,body,mime){let u=URL.createObjectURL(new Blob([body],{type:mime})),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}$('backup').onclick=()=>download('pilotage-saint-cyr-'+iso()+'.json',JSON.stringify(db,null,2),'application/json');$('exportCsv').onclick=()=>{let cols=['reference','title','description','commission','priority','status','pilot','assignee','created','due','decision','link'];let csv='\ufeff'+[cols.join(';'),...db.tasks.map(t=>cols.map(k=>'"'+String(t[k]??'').replaceAll('"','""')+'"').join(';'))].join('\r\n');download('actions-saint-cyr-'+iso()+'.csv',csv,'text/csv;charset=utf-8')};$('restore').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let obj=JSON.parse(await f.text());if(!Array.isArray(obj.tasks)||!Array.isArray(obj.commissions)||obj.tasks.some(t=>!t.id||!t.title||!t.status||!t.priority))throw Error('Format non reconnu');if(confirm('Remplacer toutes les données actuelles par cette sauvegarde ?')){db={version:2,commissions:obj.commissions.map(String),tasks:obj.tasks,dossiers:Array.isArray(obj.dossiers)?obj.dossiers:[],meetings:Array.isArray(obj.meetings)?obj.meetings:[],settings:obj.settings&&typeof obj.settings==='object'?obj.settings:db.settings};save();refreshSelects();refreshConfig();render();notice('Sauvegarde importée.')}}catch(err){alert('Import impossible : '+err.message)}e.target.value=''};$('saveCommissions').onclick=()=>{let arr=[...new Set($('commissionEdit').value.split(',').map(x=>x.trim()).filter(Boolean))];if(!arr.length)return alert('Indiquer au moins une commission.');db.commissions=[...new Set([...arr,...db.tasks.map(t=>t.commission).filter(Boolean)])];save();function storageDiagnostic(){
  try{
   const k='saintcyr.storage.test',v='ok-'+Date.now();
   localStorage.setItem(k,v);const ok=localStorage.getItem(k)===v;localStorage.removeItem(k);
@@ -237,7 +237,7 @@ $('mAddDecision').onclick=()=>{meetingDraftDecisions=collectDecisions();let d={i
 $('mDecisionRows').onclick=e=>{let btn=e.target.closest('[data-remove-decision]');if(btn){meetingDraftDecisions=collectDecisions().filter(d=>d.id!==btn.dataset.removeDecision);$('mDecisionRows').innerHTML=meetingDraftDecisions.map(decisionRow).join('')}};
 $('meetingForm').onsubmit=e=>{e.preventDefault();let m=db.meetings.find(x=>x.id===$('mId').value);if(!m){m={id:uid()};db.meetings.push(m)}m.title=$('mTitle').value.trim();m.commission=$('mCommission').value;m.date=$('mDate').value;m.people=$('mPeople').value.trim();m.stage=$('mStage').value;m.notes=$('mNotes').value.trim();m.extra=$('mExtra').value.trim();m.agenda=[...$('mAgendaChoices').querySelectorAll('[data-agenda]:checked')].map(el=>el.dataset.agenda);m.decisions=collectDecisions();save();$('meetingDialog').close();render();notice('Réunion enregistrée. Les décisions peuvent désormais être transformées en actions.')};
 $('deleteMeeting').onclick=()=>{if(confirm('Supprimer cette réunion ? Les actions déjà générées seront conservées.')){db.meetings=db.meetings.filter(x=>x.id!==$('mId').value);save();$('meetingDialog').close();render()}};
-function createDecisionAction(mid,did){let m=db.meetings.find(x=>x.id===mid),d=m?.decisions?.find(x=>x.id===did);if(!d||d.taskId)return;let t={id:uid(),title:d.text,description:'Décision de la réunion « '+m.title+' » du '+fmt(m.date),commission:m.commission,priority:d.priority||'P3',status:d.status||'À engager',pilot:d.owner||'',assignee:d.owner||'',created:iso(),due:d.due||'',reference:'',link:'',reminder:'',dossierId:'',decision:false,meetingId:m.id,history:[{at:new Date().toLocaleString('fr-FR'),text:'Action créée depuis une décision de réunion du '+fmt(m.date)}]};db.tasks.push(t);d.taskId=t.id;save();render();notice('Action créée depuis la décision.')}
+function createDecisionAction(mid,did){let m=db.meetings.find(x=>x.id===mid),d=m?.decisions?.find(x=>x.id===did);if(!d||d.taskId)return;let t={id:uid(),title:d.text,description:'Décision de la réunion « '+m.title+' » du '+fmt(m.date),commission:m.commission,priority:d.priority||'P3',status:d.status||'À engager',pilot:d.owner||'',assignee:d.owner||'',created:iso(),due:d.due||'',reference:'',link:'',reminder:'',dossierId:'',decision:false,meetingId:m.id,history:[{at:new Date().toLocaleString('fr-FR'),text:'Action créée depuis une décision de réunion du '+fmt(m.date)}]};db.tasks.push(t);d.taskId=t.id;save();render();notice('Action créée depuis la décision.');cloudMarkPending(t.id);cloudUpsertAction(t).catch(err=>cloudSoftError(err))}
 function meetingPrint(id,minutes=false){let m=db.meetings.find(x=>x.id===id);if(!m)return;let agenda=(m.agenda||[]).map(key=>{let d=key.startsWith('d:')?db.dossiers.find(x=>x.id===key.slice(2)):db.tasks.find(x=>x.id===key.slice(2));return d?.title||'[Point supprimé]'});agenda.push(...(m.extra||'').split(/\\n/).map(x=>x.trim()).filter(Boolean));let w=window.open('','_blank');if(!w)return alert('Autorisez les fenêtres contextuelles pour imprimer.');w.document.write('<!doctype html><html lang="fr"><meta charset="utf-8"><title>'+safe(minutes?'Compte rendu':'Ordre du jour')+'</title><style>body{font:14px Arial;margin:40px;line-height:1.5}li{margin:10px 0}h1{color:#263747}pre{white-space:pre-wrap;font:inherit}small{color:#555}</style><h1>'+safe(db.settings.commune||'Commune')+' — '+(minutes?'Compte rendu':'Ordre du jour')+'</h1><h2>'+safe(m.title)+'</h2><p>'+safe(m.commission)+' · '+fmt(m.date)+'</p><p><b>Participants :</b> '+safe(m.people||'À compléter')+'</p><h3>Points abordés</h3><ol>'+agenda.map(x=>'<li>'+safe(x)+'</li>').join('')+'</ol>'+(minutes?'<h3>Synthèse des échanges</h3><pre>'+safe(m.notes||'')+'</pre><h3>Décisions et suites à donner</h3><ol>'+(m.decisions||[]).map(d=>'<li><b>'+safe(d.text)+'</b> — '+safe(d.owner||'Responsable à définir')+' — échéance : '+fmt(d.due)+' — '+safe(d.priority||'P3')+(d.taskId?' (action créée)':' (action à créer)')+'</li>').join('')+'</ol>':'')+'</html>');w.document.close();w.focus();w.print();}
 function printMeeting(id){meetingPrint(id,false)}
 document.addEventListener('click',e=>{let p=e.target.closest('[data-printminutes]');if(p)meetingPrint(p.dataset.printminutes,true);let b=e.target.closest('[data-create-decision]');if(b)createDecisionAction(b.dataset.createDecision,b.dataset.decision)});
@@ -373,6 +373,17 @@ async function cloudRequireUser(){
  const {data,error}=await cloudClient.auth.getUser(); if(error||!data.user)throw error||new Error('Connectez-vous d’abord à Supabase.');
  return data.user;
 }
+
+const CLOUD_PENDING_KEY='saintcyr.cloud.pending.v1';
+const CLOUD_DELETES_KEY='saintcyr.cloud.deletes.v1';
+const cloudPending=()=>new Set(JSON.parse(localStorage.getItem(CLOUD_PENDING_KEY)||'[]'));
+const cloudDeletes=()=>new Set(JSON.parse(localStorage.getItem(CLOUD_DELETES_KEY)||'[]'));
+function cloudStoreSet(key,set){localStorage.setItem(key,JSON.stringify([...set]))}
+function cloudMarkPending(id){const s=cloudPending();s.add(id);cloudStoreSet(CLOUD_PENDING_KEY,s)}
+function cloudClearPending(id){const s=cloudPending();s.delete(id);cloudStoreSet(CLOUD_PENDING_KEY,s)}
+function cloudMarkDelete(id){const s=cloudDeletes();s.add(id);cloudStoreSet(CLOUD_DELETES_KEY,s)}
+function cloudClearDelete(id){const s=cloudDeletes();s.delete(id);cloudStoreSet(CLOUD_DELETES_KEY,s)}
+
 async function cloudUpsertAction(t){
  const {data:{session}}=await cloudClient.auth.getSession(); if(!session)return;
  ensureCloudIds(t);save();
@@ -381,11 +392,13 @@ async function cloudUpsertAction(t){
  ({error}=await cloudClient.from('action_subtasks').delete().eq('action_id',t.id)); if(error)throw error;
  const rows=(t.subtasks||[]).map(st=>({id:st.id,action_id:t.id,title:st.title||'',owner:st.owner||null,due:st.due||null,done:!!st.done}));
  if(rows.length){({error}=await cloudClient.from('action_subtasks').insert(rows));if(error)throw error;}
+ cloudClearPending(t.id);
  cloudSetState('Synchronisé',true);cloudMessage('Dernière synchronisation : '+new Date().toLocaleString('fr-FR'));
 }
 async function cloudDeleteAction(id){
  const {data:{session}}=await cloudClient.auth.getSession(); if(!session||!uuidOk(id))return;
  const {error}=await cloudClient.from('actions').delete().eq('id',id);if(error)throw error;
+ cloudClearDelete(id);
  cloudSetState('Synchronisé',true);cloudMessage('Suppression répercutée dans Supabase.');
 }
 async function cloudPushAll(){
@@ -393,19 +406,43 @@ async function cloudPushAll(){
  for(const t of db.tasks)await cloudUpsertAction(t);
  save();render();cloudSetState('Synchronisé',true);cloudMessage(db.tasks.length+' action(s) locale(s) envoyée(s) vers Supabase.');
 }
-async function cloudPull(){
+async function cloudPull(silent=false){
  await cloudRequireUser();
  let {data:actions,error}=await cloudClient.from('actions').select('*').order('created_at',{ascending:true});if(error)throw error;
  let {data:subs,error:subError}=await cloudClient.from('action_subtasks').select('*');if(subError)throw subError;
  const byAction={};(subs||[]).forEach(st=>(byAction[st.action_id]??=[]).push({id:st.id,title:st.title,owner:st.owner||'',due:st.due||'',done:!!st.done}));
- const localById=new Map(db.tasks.map(t=>[t.id,t]));
+ const pending=cloudPending(), deletes=cloudDeletes(), localById=new Map(db.tasks.map(t=>[t.id,t]));
+ const cloudIds=new Set((actions||[]).map(a=>a.id));
+ const next=[];
  (actions||[]).forEach(a=>{
+  if(deletes.has(a.id))return;
+  if(pending.has(a.id)&&localById.has(a.id)){next.push(localById.get(a.id));return;}
   const prior=localById.get(a.id)||{history:[]};
-  const t={...prior,id:a.id,title:a.title||'',description:a.description||'',commission:a.commission||'',reference:a.reference||'',priority:a.priority||'P3',status:a.status||'',pilot:a.pilot||'',assignee:a.assignee||'',created:a.created||'',due:a.due||'',reminder:a.reminder||'',decision:!!a.decision,link:a.link||'',dossierId:a.dossier_id||'',subtasks:byAction[a.id]||[]};
-  if(localById.has(a.id))Object.assign(localById.get(a.id),t);else db.tasks.push(t);
+  next.push({...prior,id:a.id,title:a.title||'',description:a.description||'',commission:a.commission||'',reference:a.reference||'',priority:a.priority||'P3',status:a.status||'',pilot:a.pilot||'',assignee:a.assignee||'',created:a.created||'',due:a.due||'',reminder:a.reminder||'',decision:!!a.decision,link:a.link||'',dossierId:a.dossier_id||'',subtasks:byAction[a.id]||[]});
  });
- save();refreshSelects();render();cloudSetState('Synchronisé',true);cloudMessage((actions||[]).length+' action(s) chargée(s) depuis Supabase.');
+ // Conserver les modifications locales non encore envoyées si Internet a coupé.
+ db.tasks.forEach(t=>{if(pending.has(t.id)&&!cloudIds.has(t.id)&&!deletes.has(t.id))next.push(t)});
+ db.tasks=next;
+ save();refreshSelects();render();cloudSetState('Synchronisé',true);
+ if(!silent)cloudMessage((actions||[]).length+' action(s) synchronisée(s) depuis Supabase.');
 }
+let cloudAutoBusy=false;
+async function cloudAutoSync(){
+ if(cloudAutoBusy||document.body.classList.contains('auth-locked'))return;
+ cloudAutoBusy=true;
+ try{
+  // Réessayer d'abord les changements locaux restés en attente.
+  const deletes=cloudDeletes();
+  for(const id of [...deletes])await cloudDeleteAction(id);
+  const pending=cloudPending();
+  for(const id of [...pending]){const t=db.tasks.find(x=>x.id===id);if(t)await cloudUpsertAction(t)}
+  await cloudPull(true);
+  cloudSetState('Synchronisé',true);
+  cloudMessage('Synchronisation automatique : '+new Date().toLocaleTimeString('fr-FR'));
+ }catch(err){cloudSoftError(err)}
+ finally{cloudAutoBusy=false}
+}
+
 $('cloudLogin').onclick=()=>cloudLogin().catch(cloudSoftError);
 $('cloudLogout').onclick=()=>cloudLogout().catch(cloudSoftError);
 $('cloudPushAll').onclick=()=>{if(confirm('Envoyer toutes les actions locales vers Supabase ?'))cloudPushAll().catch(cloudSoftError)};
@@ -444,11 +481,15 @@ async function authGateLogin(){
  setPortalAccess(data.session);
  cloudSetState('Connecté',true);
  cloudMessage('Connexion Supabase réussie : '+(data.user?.email||email));
+ setTimeout(()=>cloudAutoSync(),0);
 }
 authLoginBtn.addEventListener('click',()=>authGateLogin().catch(err=>{authLoginBtn.disabled=false;authGateStatus.className='auth-status error';authGateStatus.textContent='Connexion impossible : '+(err?.message||err)}));
 authPassword.addEventListener('keydown',e=>{if(e.key==='Enter')authLoginBtn.click()});
-cloudClient.auth.getSession().then(({data})=>setPortalAccess(data.session)).catch(err=>{authGateStatus.className='auth-status error';authGateStatus.textContent='Vérification impossible : '+(err?.message||err)});
-cloudClient.auth.onAuthStateChange((_event,session)=>setPortalAccess(session));
+cloudClient.auth.getSession().then(({data})=>{setPortalAccess(data.session);if(data.session)setTimeout(()=>cloudAutoSync(),0)}).catch(err=>{authGateStatus.className='auth-status error';authGateStatus.textContent='Vérification impossible : '+(err?.message||err)});
+cloudClient.auth.onAuthStateChange((_event,session)=>{setPortalAccess(session);if(session)setTimeout(()=>cloudAutoSync(),0)});
+window.addEventListener('focus',()=>cloudAutoSync());
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)cloudAutoSync()});
+setInterval(()=>cloudAutoSync(),10000);
 // Le bouton de déconnexion existant verrouille immédiatement le portail.
 document.getElementById('cloudLogout').addEventListener('click',()=>setTimeout(async()=>{const {data}=await cloudClient.auth.getSession();setPortalAccess(data.session)},0));
 // ===== fin V5.9 =====
