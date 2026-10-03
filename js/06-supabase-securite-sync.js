@@ -92,6 +92,61 @@ async function cloudPull(silent=false){
  save();refreshSelects();render();cloudSetState('Synchronisé',true);
  if(!silent)cloudMessage((actions||[]).length+' action(s) synchronisée(s) depuis Supabase.');
 }
+
+// ===== V6.2.25 — Synchronisation des paramètres uniquement =====
+const PORTAL_SETTINGS_ID='municipal_config';
+function cloudSettingsPayload(){
+ return {
+  commissions:Array.isArray(db?.commissions)?[...db.commissions]:[],
+  settings:db?.settings?JSON.parse(JSON.stringify(db.settings)):{},
+  documentThemes:typeof window.portalGetLibraryThemes==='function'?window.portalGetLibraryThemes():[]
+ };
+}
+function cloudApplySettingsPayload(payload){
+ if(!payload||typeof payload!=='object')return;
+ let changed=false;
+ if(Array.isArray(payload.commissions)&&payload.commissions.length){db.commissions=[...new Set(payload.commissions.map(String))];changed=true}
+ if(payload.settings&&typeof payload.settings==='object'){db.settings={...db.settings,...payload.settings};changed=true}
+ if(changed){save();refreshSelects();refreshConfig();render()}
+ if(Array.isArray(payload.documentThemes)&&payload.documentThemes.length&&typeof window.portalApplyLibraryThemes==='function')window.portalApplyLibraryThemes(payload.documentThemes);
+}
+async function cloudPushSettings(){
+ const {data:{session}}=await cloudClient.auth.getSession();if(!session)return;
+ const row={id:PORTAL_SETTINGS_ID,payload:cloudSettingsPayload(),updated_at:new Date().toISOString()};
+ const {error}=await cloudClient.from('portal_settings').upsert(row,{onConflict:'id'});if(error)throw error;
+}
+async function cloudSyncSettings(){
+ const {data:{session}}=await cloudClient.auth.getSession();if(!session)return;
+ const {data,error}=await cloudClient.from('portal_settings').select('payload,updated_at').eq('id',PORTAL_SETTINGS_ID).maybeSingle();if(error)throw error;
+ if(!data){await cloudPushSettings();return 'seeded'}
+ cloudApplySettingsPayload(data.payload);return 'pulled';
+}
+window.portalPushSettings=cloudPushSettings;
+function cloudSettingsEditing(){
+ const a=document.activeElement;
+ const editIds=new Set(['commissionEdit','cfgElus','cfgAgents','cfgTypes','cfgDStatuses','cfgPriorityLabels','cfgCommune','newThemeName']);
+ if(a&&editIds.has(a.id))return true;
+ const themeDialog=document.getElementById('themeManager');
+ return !!(themeDialog&&themeDialog.open&&themeDialog.contains(a));
+}
+const PORTAL_SETTINGS_PULL_INTERVAL=120000;
+let portalSettingsLastPull=0;
+let portalSettingsInitialPullDone=false;
+async function cloudPullSettingsSafely(force=false){
+ if(cloudSettingsEditing())return 'editing';
+ const now=Date.now();
+ if(!force && portalSettingsLastPull && (now-portalSettingsLastPull)<PORTAL_SETTINGS_PULL_INTERVAL)return 'waiting';
+ const result=await cloudSyncSettings();
+ portalSettingsLastPull=Date.now();
+ return result;
+}
+async function cloudInitialSettingsPull(){
+ if(portalSettingsInitialPullDone)return 'already-loaded';
+ portalSettingsInitialPullDone=true;
+ return cloudPullSettingsSafely(true);
+}
+// ===== fin V6.2.25 =====
+
 let cloudAutoBusy=false;
 async function cloudAutoSync(){
  if(cloudAutoBusy||document.body.classList.contains('auth-locked'))return;
@@ -106,6 +161,8 @@ async function cloudAutoSync(){
   // Bibliothèque : utiliser la même synchronisation automatique que les Actions.
   // Cela garantit la récupération des ressources Supabase même si postgres_changes ne livre aucun événement.
   if(typeof window.portalRefreshLibrary==='function') await window.portalRefreshLibrary();
+  // Les paramètres restent synchronisés automatiquement, mais jamais pendant une saisie.
+  await cloudPullSettingsSafely();
   cloudSetState('Synchronisé',true);
   cloudMessage('Synchronisation automatique : '+new Date().toLocaleTimeString('fr-FR'));
  }catch(err){cloudSoftError(err)}
@@ -154,8 +211,8 @@ async function authGateLogin(){
 }
 authLoginBtn.addEventListener('click',()=>authGateLogin().catch(err=>{authLoginBtn.disabled=false;authGateStatus.className='auth-status error';authGateStatus.textContent='Connexion impossible : '+(err?.message||err)}));
 authPassword.addEventListener('keydown',e=>{if(e.key==='Enter')authLoginBtn.click()});
-cloudClient.auth.getSession().then(({data})=>{setPortalAccess(data.session);if(data.session)setTimeout(()=>cloudAutoSync(),0)}).catch(err=>{authGateStatus.className='auth-status error';authGateStatus.textContent='Vérification impossible : '+(err?.message||err)});
-cloudClient.auth.onAuthStateChange((_event,session)=>{setPortalAccess(session);if(session)setTimeout(()=>cloudAutoSync(),0)});
+cloudClient.auth.getSession().then(({data})=>{setPortalAccess(data.session);if(data.session)setTimeout(async()=>{try{await cloudInitialSettingsPull()}catch(err){cloudSoftError(err)}cloudAutoSync()},0)}).catch(err=>{authGateStatus.className='auth-status error';authGateStatus.textContent='Vérification impossible : '+(err?.message||err)});
+cloudClient.auth.onAuthStateChange((_event,session)=>{setPortalAccess(session);if(session)setTimeout(async()=>{try{await cloudInitialSettingsPull()}catch(err){cloudSoftError(err)}cloudAutoSync()},0)});
 window.addEventListener('focus',()=>cloudAutoSync());
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)cloudAutoSync()});
 setInterval(()=>cloudAutoSync(),10000);
