@@ -47,7 +47,7 @@ function open(c={}){
 }
 async function client(){return window.portalCloudClient||null}
 async function up(c){let cl=await client();if(!cl)return;let {data:{session}}=await cl.auth.getSession();if(!session)return;let {error}=await cl.from('annuaire_contacts').upsert({id:c.id,payload:c,updated_at:c.updatedAt},{onConflict:'id'});if(error)throw error;let p=set(PK);p.delete(c.id);put(PK,p)}
-async function del(id){let cl=await client();if(!cl)return;let {data:{session}}=await cl.auth.getSession();if(!session)return;let {error}=await cl.from('annuaire_contacts').delete().eq('id',id);if(error)throw error;let d=set(DK);d.delete(id);put(DK,d)}
+async function del(id){let cl=await client();if(!cl)return false;let {data:{session}}=await cl.auth.getSession();if(!session)return false;let {error}=await cl.from('annuaire_contacts').delete().eq('id',id);if(error)throw error;let d=set(DK);d.delete(id);put(DK,d);return true}
 async function saveRefs(){let cl=await client();if(!cl)return;let {data:{session}}=await cl.auth.getSession();if(!session)return;await cl.from('portal_settings').upsert([{key:'annuaire_categories',value:cats,updated_at:new Date().toISOString()},{key:'annuaire_subcategories',value:subs,updated_at:new Date().toISOString()}],{onConflict:'key'})}
 async function pull(){let cl=await client();if(!cl)return;let {data:{session}}=await cl.auth.getSession();if(!session)return;try{
  let {data:st}=await cl.from('portal_settings').select('key,value').in('key',['annuaire_categories','annuaire_subcategories']);
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  $('annuaireListMode').onclick=()=>{displayMode='list';localStorage.setItem('saintcyr.annuaire.display.v1',displayMode);render()};$('annuaireCardMode').onclick=()=>{displayMode='cards';localStorage.setItem('saintcyr.annuaire.display.v1',displayMode);render()};
  $('contactCards').onclick=e=>{let b=e.target.closest('[data-contact-edit]');if(b)open(contacts.find(c=>c.id===b.dataset.contactEdit)||{})};
  $('contactForm').onsubmit=e=>{e.preventDefault();let id=$('contactId').value||crypto.randomUUID(),old=contacts.find(c=>c.id===id)||{},c={...old,id,lastName:$('contactLastName').value.trim(),firstName:$('contactFirstName').value.trim(),category:$('contactCategory').value,subcategory:$('contactSubcategory').value,organization:$('contactOrganization').value.trim(),function:$('contactFunction').value.trim(),phone:$('contactPhone').value.trim(),mobile:$('contactMobile').value.trim(),email:$('contactEmail').value.trim(),address:$('contactAddress').value.trim(),postalCode:$('contactPostalCode').value.trim(),city:$('contactCity').value.trim(),notes:$('contactNotes').value.trim(),updatedAt:new Date().toISOString()};let i=contacts.findIndex(x=>x.id===id);i<0?contacts.push(c):contacts[i]=c;let p=set(PK);p.add(id);put(PK,p);save();$('contactDialog').close();render();up(c).catch(console.warn)};
- $('deleteContact').onclick=async()=>{let id=$('contactId').value;if(!id||!confirm('Supprimer ce contact ?'))return;contacts=contacts.filter(c=>c.id!==id);let p=set(PK);p.delete(id);put(PK,p);let d=set(DK);d.add(id);put(DK,d);save();$('contactDialog').close();render();try{await del(id);await pull()}catch(e){console.warn('Suppression contact',e)}};
+ $('deleteContact').onclick=()=>{let id=$('contactId').value;if(!id||!confirm('Supprimer ce contact ?'))return;contacts=contacts.filter(c=>c.id!==id);let d=set(DK);d.add(id);put(DK,d);let p=set(PK);p.delete(id);put(PK,p);save();$('contactDialog').close();render();del(id).catch(e=>console.warn('Suppression contact',e))};
  $('contactCategoryToggle').onclick=()=>{let b=$('contactCategoryBody'),v=b.style.display==='none';b.style.display=v?'block':'none';$('contactCategoryToggle').textContent=v?'Masquer':'Afficher'};
  $('addContactCategory').onclick=()=>{let n=$('newContactCategory').value.trim();if(n&&!cats.includes(n)){cats.push(n);subs[n]=[];$('newContactCategory').value='';save();render();saveRefs()}};
  $('contactCategoryRows').onclick=e=>{
@@ -80,5 +80,5 @@ document.addEventListener('DOMContentLoaded',()=>{
  };
  pull();setInterval(pull,20000);window.addEventListener('focus',pull);document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 });
-window.portalAnnuaireCloudSync=pull;window.portalRenderAnnuaire=render;
+window.portalAnnuaireCloudDelete=del;window.portalAnnuairePendingDeletes=()=>[...set(DK)];window.portalAnnuaireCloudSync=pull;window.portalRenderAnnuaire=render;
 })();

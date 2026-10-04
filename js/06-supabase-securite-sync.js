@@ -213,6 +213,11 @@ async function cloudAutoSync(){
   for(const id of [...dossierPending]){const d=(db.dossiers||[]).find(x=>x.id===id);if(d)await cloudUpsertDossier(d)}
   await cloudPullDossiers();
   await cloudPull(true);
+  // Annuaire : même ordre que les Actions — rejouer les suppressions locales AVANT toute récupération cloud.
+  if(typeof window.portalAnnuairePendingDeletes==='function'&&typeof window.portalAnnuaireCloudDelete==='function'){
+   for(const id of window.portalAnnuairePendingDeletes())await window.portalAnnuaireCloudDelete(id);
+  }
+  if(typeof window.portalAnnuaireCloudSync==='function')await window.portalAnnuaireCloudSync();
   // Bibliothèque : utiliser la même synchronisation automatique que les Actions.
   // Cela garantit la récupération des ressources Supabase même si postgres_changes ne livre aucun événement.
   if(typeof window.portalRefreshLibrary==='function') await window.portalRefreshLibrary();
@@ -223,7 +228,6 @@ async function cloudAutoSync(){
  }catch(err){cloudSoftError(err)}
  finally{cloudAutoBusy=false}
 
- try{if(typeof window.portalAnnuaireCloudSync==='function')await window.portalAnnuaireCloudSync()}catch(err){console.warn('[Annuaire auto-sync]',err)}
 }
 
 $('cloudLogin').onclick=()=>cloudLogin().catch(cloudSoftError);
