@@ -352,7 +352,7 @@ body.auth-locked #mobileBottomNav{display:none!important}
 <div class="welcome-status-stack">
 <div class="welcome-date"><span>▦ &nbsp;<span id="portalToday"></span></span></div>
 <div id="supabaseConnectionIndicator" class="supabase-connection-indicator" aria-live="polite"><span class="supabase-dot"></span><span class="supabase-label">Supabase : vérification…</span></div>
-<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.6.11</div>
+<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.6.12</div>
 </div>
 
 </div>
@@ -436,10 +436,10 @@ body.auth-locked #mobileBottomNav{display:none!important}
 <div id="classNone" class="hidden"><p class="hint">Cette action ne sera rattachée à aucun dossier.</p></div></div><label>Priorité<select id="priority"><option value="P1">P1 — Critique</option><option value="P2">P2 — Urgent</option><option value="P3" selected>P3 — Normal</option><option value="P4">P4 — Secondaire</option></select></label><label>État<select id="status"></select></label><label>Élu pilote<select id="pilot"></select></label><label>Échéance<input id="due" type="date"></label><label class="wide">Lien vers un document <span class="muted">(facultatif)</span><input id="link" type="url" placeholder="https://…"></label><label class="wide">Ajouter une note à l'historique<textarea id="note" rows="2" placeholder="Compte rendu, note…"></textarea></label></div><div class="action-subtasks"><h3>Sous-tâches de cette action <span id="actionProgress" class="muted"></span></h3><p class="muted">Les étapes cochées contribuent à l'avancement de l'action, puis du dossier parent.</p><div id="actionSubRows"></div><div class="fields"><label class="wide">Nouvelle sous-tâche<input id="actionSubTitle" placeholder="Ex. Demander trois devis"></label><label>Agent / intervenant<select id="actionSubOwner"></select></label><label>Échéance<input type="date" id="actionSubDue"></label><label style="display:block"><input id="actionSubDecision" type="checkbox" style="width:auto"> Décision</label></div><button type="button" class="secondary" id="actionAddSub">+ Ajouter une sous-tâche</button></div><div id="historyWrap" class="hidden"><h3>Historique</h3><div id="history" class="timeline"></div></div><div class="actions"><button type="button" class="danger hidden" id="deleteTask">Supprimer</button><button type="button" class="secondary" id="cancel">Annuler</button><button type="submit">Enregistrer l'action</button></div></form></dialog>
 <!-- MODULE 01 · Données et actions : maintenir les dépendances et cet ordre -->
 <!-- MODULE MÉTIER : scripts regroupés pour garantir la portée et le chargement des fonctions -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./js/01-pilotage.js?v=6611"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./js/01-pilotage.js?v=6612"></script>
 <!-- MODULE 04 · Accueil, navigation et bibliothèque -->
 <script src="./js/04-navigation-bibliotheque.js?v=667g"></script><nav class="mobile-bottom-nav" aria-label="Navigation mobile" id="mobileBottomNav"><button type="button" data-mobile="home" aria-current="page"><span class="nav-symbol">⌂</span>Accueil</button><button type="button" data-mobile="pilotage"><span class="nav-symbol">☷</span>Pilotage</button><button type="button" data-mobile="new"><span class="nav-symbol">＋</span>Action</button><button type="button" data-mobile="library"><span class="nav-symbol">▤</span>Documents</button></nav><script src="./js/05-mobile.js?v=667g"></script>
-<script src="./js/06-supabase-securite-sync.js?v=667g"></script>
+<script src="./js/06-supabase-securite-sync.js?v=6612"></script>
 <script src="./js/07-pwa.js?v=667g"></script>
 <script src="js/07-supabase-connection-indicator.js?v=667g"></script>
 <script id="v6311-settings-button-fallback">
