@@ -99,6 +99,62 @@ async function cloudPull(silent=false){
  if(!silent)cloudMessage((actions||[]).length+' action(s) synchronisée(s) depuis Supabase.');
 }
 
+
+// ===== V6.3.15 — Synchronisation Supabase des dossiers =====
+const DOSSIER_PENDING_KEY='saintcyr.cloud.dossiers.pending.v1';
+const DOSSIER_DELETES_KEY='saintcyr.cloud.dossiers.deletes.v1';
+const cloudDossierPending=()=>new Set(JSON.parse(localStorage.getItem(DOSSIER_PENDING_KEY)||'[]'));
+const cloudDossierDeletes=()=>new Set(JSON.parse(localStorage.getItem(DOSSIER_DELETES_KEY)||'[]'));
+function cloudMarkDossierPending(id){const x=cloudDossierPending();x.add(id);cloudStoreSet(DOSSIER_PENDING_KEY,x)}
+function cloudClearDossierPending(id){const x=cloudDossierPending();x.delete(id);cloudStoreSet(DOSSIER_PENDING_KEY,x)}
+function cloudMarkDossierDelete(id){const x=cloudDossierDeletes();x.add(id);cloudStoreSet(DOSSIER_DELETES_KEY,x)}
+function cloudClearDossierDelete(id){const x=cloudDossierDeletes();x.delete(id);cloudStoreSet(DOSSIER_DELETES_KEY,x)}
+function dossierCloudRow(d){
+ if(!uuidOk(d.id))d.id=crypto.randomUUID();
+ d.updatedAt=d.updatedAt||new Date().toISOString();
+ return {id:d.id,payload:JSON.parse(JSON.stringify(d)),updated_at:d.updatedAt};
+}
+async function cloudUpsertDossier(d){
+ const {data:{session}}=await cloudClient.auth.getSession();if(!session)return;
+ d.updatedAt=new Date().toISOString();
+ const {error}=await cloudClient.from('dossiers').upsert(dossierCloudRow(d),{onConflict:'id'});if(error)throw error;
+ cloudClearDossierPending(d.id);save();
+}
+async function cloudDeleteDossier(id){
+ const {data:{session}}=await cloudClient.auth.getSession();if(!session||!uuidOk(id))return;
+ const {error}=await cloudClient.from('dossiers').delete().eq('id',id);if(error)throw error;
+ cloudClearDossierDelete(id);
+}
+async function cloudPullDossiers(){
+ const {data:{session}}=await cloudClient.auth.getSession();if(!session)return;
+ const {data,error}=await cloudClient.from('dossiers').select('id,payload,updated_at');if(error)throw error;
+ const rows=data||[], pending=cloudDossierPending(), deletes=cloudDossierDeletes();
+ const localById=new Map((db.dossiers||[]).map(d=>[d.id,d]));
+ const cloudIds=new Set(rows.map(r=>r.id));
+ const next=[];
+ for(const r of rows){
+  if(deletes.has(r.id))continue;
+  const local=localById.get(r.id);
+  if(pending.has(r.id)&&local){next.push(local);continue}
+  const d=(r.payload&&typeof r.payload==='object')?r.payload:{id:r.id};
+  d.id=r.id; d.updatedAt=r.updated_at||d.updatedAt||'';
+  next.push(d);
+ }
+ // Un dossier uniquement local est envoyé au serveur au lieu d'être perdu.
+ for(const d of (db.dossiers||[])){
+  if(deletes.has(d.id)||cloudIds.has(d.id))continue;
+  next.push(d);cloudMarkDossierPending(d.id);
+ }
+ db.dossiers=next;save();render();
+ const nowPending=cloudDossierPending();
+ for(const id of [...nowPending]){const d=db.dossiers.find(x=>x.id===id);if(d)await cloudUpsertDossier(d)}
+}
+window.cloudMarkDossierPending=cloudMarkDossierPending;
+window.cloudMarkDossierDelete=cloudMarkDossierDelete;
+window.cloudUpsertDossier=cloudUpsertDossier;
+window.cloudDeleteDossier=cloudDeleteDossier;
+// ===== fin V6.3.15 =====
+
 // ===== V6.2.20 — Paramètres communs : récupération fiable sans interrompre la saisie =====
 const PORTAL_SETTINGS_ID='municipal_config';
 function cloudSettingsPayload(){
@@ -151,6 +207,11 @@ async function cloudAutoSync(){
   for(const id of [...deletes])await cloudDeleteAction(id);
   const pending=cloudPending();
   for(const id of [...pending]){const t=db.tasks.find(x=>x.id===id);if(t)await cloudUpsertAction(t)}
+  const dossierDeletes=cloudDossierDeletes();
+  for(const id of [...dossierDeletes])await cloudDeleteDossier(id);
+  const dossierPending=cloudDossierPending();
+  for(const id of [...dossierPending]){const d=(db.dossiers||[]).find(x=>x.id===id);if(d)await cloudUpsertDossier(d)}
+  await cloudPullDossiers();
   await cloudPull(true);
   // Bibliothèque : utiliser la même synchronisation automatique que les Actions.
   // Cela garantit la récupération des ressources Supabase même si postgres_changes ne livre aucun événement.
