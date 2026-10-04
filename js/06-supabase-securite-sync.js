@@ -62,7 +62,7 @@ async function cloudUpsertAction(t){
  let {error}=await cloudClient.from('actions').upsert(actionCloudRow(t),{onConflict:'id'});
  if(error)throw error;
  ({error}=await cloudClient.from('action_subtasks').delete().eq('action_id',t.id)); if(error)throw error;
- const rows=(t.subtasks||[]).map(st=>({id:st.id,action_id:t.id,title:st.title||'',owner:st.owner||null,due:st.due||null,done:!!st.done}));
+ const rows=(t.subtasks||[]).map(st=>({id:st.id,action_id:t.id,title:st.title||'',owner:st.owner||null,due:st.due||null,decision:!!st.decision,done:!!st.done}));
  if(rows.length){({error}=await cloudClient.from('action_subtasks').insert(rows));if(error)throw error;}
  cloudClearPending(t.id);
  cloudSetState('Synchronisé',true);cloudMessage('Dernière synchronisation : '+new Date().toLocaleString('fr-FR'));
@@ -82,7 +82,7 @@ async function cloudPull(silent=false){
  await cloudRequireUser();
  let {data:actions,error}=await cloudClient.from('actions').select('*').order('created_at',{ascending:true});if(error)throw error;
  let {data:subs,error:subError}=await cloudClient.from('action_subtasks').select('*');if(subError)throw subError;
- const byAction={};(subs||[]).forEach(st=>(byAction[st.action_id]??=[]).push({id:st.id,title:st.title,owner:st.owner||'',due:st.due||'',done:!!st.done}));
+ const byAction={};(subs||[]).forEach(st=>(byAction[st.action_id]??=[]).push({id:st.id,title:st.title,owner:st.owner||'',due:st.due||'',decision:!!st.decision,done:!!st.done}));
  const pending=cloudPending(), deletes=cloudDeletes(), localById=new Map(db.tasks.map(t=>[t.id,t]));
  const cloudIds=new Set((actions||[]).map(a=>a.id));
  const next=[];
