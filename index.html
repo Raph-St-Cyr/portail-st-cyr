@@ -165,6 +165,36 @@ body.auth-locked #mobileBottomNav{display:none!important}
   body{padding-bottom:0!important;}
 }
 </style>
+
+<style id="v648-annuaire-header">
+/* Annuaire : titre blanc sur PC et téléphone */
+#portalAnnuaire > header h1{color:#fff!important;}
+#portalAnnuaire > header small{color:#fff!important;}
+@media (max-width:760px){
+  #portalAnnuaire > header{
+    display:grid!important;
+    grid-template-columns:auto 1fr!important;
+    align-items:center!important;
+    gap:12px!important;
+  }
+  #portalAnnuaire > header > div{
+    min-width:0!important;
+  }
+  #portalAnnuaire > header h1{
+    margin:0!important;
+    font-size:1.35rem!important;
+    line-height:1.15!important;
+    white-space:nowrap!important;
+  }
+  #portalAnnuaire > header small{
+    display:none!important;
+  }
+  #portalAnnuaire > header #newContact{
+    grid-column:1 / -1!important;
+    justify-self:start!important;
+  }
+}
+</style>
 </head><body class="auth-locked"><section id="authGate" aria-label="Connexion au portail municipal">
 <div class="auth-card">
 <div class="auth-lock-mark" aria-hidden="true">🔒</div>
@@ -184,7 +214,7 @@ body.auth-locked #mobileBottomNav{display:none!important}
 <div class="welcome-status-stack">
 <div class="welcome-date"><span>▦ &nbsp;<span id="portalToday"></span></span></div>
 <div id="supabaseConnectionIndicator" class="supabase-connection-indicator" aria-live="polite"><span class="supabase-dot"></span><span class="supabase-label">Supabase : vérification…</span></div>
-<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.4.7</div>
+<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.4.8</div>
 </div>
 
 </div>
