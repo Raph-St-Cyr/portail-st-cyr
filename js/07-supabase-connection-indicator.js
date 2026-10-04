@@ -1,1 +1,17 @@
-(()=>{const e=document.getElementById("supabaseConnectionIndicator");if(!e)return;const l=e.querySelector(".supabase-label");async function c(){let o=false;try{const s=window.supabaseClient||window.supabase;if(s&&s.auth&&typeof s.auth.getSession==="function"){const r=await s.auth.getSession();o=!r?.error&&!!r?.data?.session}}catch(_){o=false}e.classList.toggle("is-connected",o);l.textContent=o?"Supabase connecté":"Supabase déconnecté"}window.addEventListener("load",()=>{setTimeout(c,1200);setInterval(c,30000)})})();
+(() => {
+  const home = document.getElementById("supabaseConnectionIndicator");
+  const settings = document.getElementById("cloudState");
+  if (!home || !settings) return;
+  const label = home.querySelector(".supabase-label");
+  function mirrorSettingsState() {
+    const text = (settings.textContent || "").trim();
+    const connected = settings.classList.contains("cloud-ok");
+    home.classList.toggle("is-connected", connected);
+    label.textContent = connected ? "Supabase connecté" : "Supabase déconnecté";
+    home.title = text ? "État Paramètres : " + text : "";
+  }
+  mirrorSettingsState();
+  new MutationObserver(mirrorSettingsState).observe(settings, {
+    childList:true, subtree:true, attributes:true, attributeFilter:["class"]
+  });
+})();
