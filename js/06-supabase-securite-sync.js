@@ -155,6 +155,22 @@ window.cloudUpsertDossier=cloudUpsertDossier;
 window.cloudDeleteDossier=cloudDeleteDossier;
 // ===== fin V6.3.15 =====
 
+// ===== V6.6.12 — Synchronisation Supabase des réunions =====
+const MEETING_PENDING_KEY='saintcyr.cloud.meetings.pending.v1';
+const MEETING_DELETES_KEY='saintcyr.cloud.meetings.deletes.v1';
+const cloudMeetingPending=()=>new Set(JSON.parse(localStorage.getItem(MEETING_PENDING_KEY)||'[]'));
+const cloudMeetingDeletes=()=>new Set(JSON.parse(localStorage.getItem(MEETING_DELETES_KEY)||'[]'));
+function cloudMarkMeetingPending(id){const x=cloudMeetingPending();x.add(id);cloudStoreSet(MEETING_PENDING_KEY,x)}
+function cloudClearMeetingPending(id){const x=cloudMeetingPending();x.delete(id);cloudStoreSet(MEETING_PENDING_KEY,x)}
+function cloudMarkMeetingDelete(id){const x=cloudMeetingDeletes();x.add(id);cloudStoreSet(MEETING_DELETES_KEY,x)}
+function cloudClearMeetingDelete(id){const x=cloudMeetingDeletes();x.delete(id);cloudStoreSet(MEETING_DELETES_KEY,x)}
+function meetingCloudRow(m){if(!uuidOk(m.id))m.id=crypto.randomUUID();m.updatedAt=m.updatedAt||new Date().toISOString();return {id:m.id,payload:JSON.parse(JSON.stringify(m)),updated_at:m.updatedAt}}
+async function cloudUpsertMeeting(m){const {data:{session}}=await cloudClient.auth.getSession();if(!session)return;m.updatedAt=new Date().toISOString();const {error}=await cloudClient.from('portal_meetings').upsert(meetingCloudRow(m),{onConflict:'id'});if(error)throw error;cloudClearMeetingPending(m.id);save()}
+async function cloudDeleteMeeting(id){const {data:{session}}=await cloudClient.auth.getSession();if(!session||!uuidOk(id))return;const {error}=await cloudClient.from('portal_meetings').delete().eq('id',id);if(error)throw error;cloudClearMeetingDelete(id)}
+async function cloudPullMeetings(){const {data:{session}}=await cloudClient.auth.getSession();if(!session)return;const {data,error}=await cloudClient.from('portal_meetings').select('id,payload,updated_at');if(error)throw error;const rows=data||[],pending=cloudMeetingPending(),deletes=cloudMeetingDeletes(),localById=new Map((db.meetings||[]).map(m=>[m.id,m])),cloudIds=new Set(rows.map(r=>r.id)),next=[];for(const r of rows){if(deletes.has(r.id))continue;const local=localById.get(r.id);if(pending.has(r.id)&&local){next.push(local);continue}const m=(r.payload&&typeof r.payload==='object')?r.payload:{id:r.id};m.id=r.id;m.updatedAt=r.updated_at||m.updatedAt||'';next.push(m)}for(const m of (db.meetings||[])){if(deletes.has(m.id)||cloudIds.has(m.id))continue;if(pending.has(m.id))next.push(m)}db.meetings=next;save();render()}
+window.cloudMarkMeetingPending=cloudMarkMeetingPending;window.cloudMarkMeetingDelete=cloudMarkMeetingDelete;window.cloudUpsertMeeting=cloudUpsertMeeting;window.cloudDeleteMeeting=cloudDeleteMeeting;
+// ===== fin V6.6.12 =====
+
 // ===== V6.2.20 — Paramètres communs : récupération fiable sans interrompre la saisie =====
 const PORTAL_SETTINGS_ID='municipal_config';
 function cloudSettingsPayload(){
@@ -211,7 +227,12 @@ async function cloudAutoSync(){
   for(const id of [...dossierDeletes])await cloudDeleteDossier(id);
   const dossierPending=cloudDossierPending();
   for(const id of [...dossierPending]){const d=(db.dossiers||[]).find(x=>x.id===id);if(d)await cloudUpsertDossier(d)}
+  const meetingDeletes=cloudMeetingDeletes();
+  for(const id of [...meetingDeletes])await cloudDeleteMeeting(id);
+  const meetingPending=cloudMeetingPending();
+  for(const id of [...meetingPending]){const m=(db.meetings||[]).find(x=>x.id===id);if(m)await cloudUpsertMeeting(m)}
   await cloudPullDossiers();
+  await cloudPullMeetings();
   await cloudPull(true);
   // Annuaire : même ordre que les Actions — rejouer les suppressions locales AVANT toute récupération cloud.
   if(typeof window.portalAnnuairePendingDeletes==='function'&&typeof window.portalAnnuaireCloudDelete==='function'){
@@ -304,6 +325,7 @@ function cloudStartRealtime(){
   cloudRealtimeChannel=cloudClient.channel('portail-actions-live')
    .on('postgres_changes',{event:'*',schema:'public',table:'actions'},cloudRealtimeRefresh)
    .on('postgres_changes',{event:'*',schema:'public',table:'action_subtasks'},cloudRealtimeRefresh)
+   .on('postgres_changes',{event:'*',schema:'public',table:'portal_meetings'},cloudRealtimeRefresh)
    .subscribe();
  }
  if(!cloudLibraryRealtimeChannel){
