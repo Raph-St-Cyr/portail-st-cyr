@@ -5,8 +5,14 @@ const cloudClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE
 window.portalCloudClient=cloudClient; // client partagé avec la bibliothèque
 
 function cloudSetState(text,ok=false){
- const el=$('cloudState'); if(!el)return;
- el.textContent=text; el.className='pill '+(ok?'cloud-ok':'cloud-warn');
+ const el=$('cloudState');
+ if(el){el.textContent=text; el.className='pill '+(ok?'cloud-ok':'cloud-warn');}
+ const home=document.getElementById('supabaseConnectionIndicator');
+ if(home){
+  home.classList.toggle('is-connected',!!ok);
+  const label=home.querySelector('.supabase-label');
+  if(label)label.textContent=ok?'Supabase connecté':'Supabase déconnecté';
+ }
 }
 function cloudMessage(text){if($('cloudDetails'))$('cloudDetails').textContent=text}
 function cloudSoftError(err){console.error('[Supabase]',err);cloudSetState('Erreur',false);cloudMessage('Supabase : '+(err?.message||err))}
@@ -111,13 +117,9 @@ function cloudApplySettingsPayload(payload){
  if(Array.isArray(payload.documentThemes)&&payload.documentThemes.length&&typeof window.portalApplyLibraryThemes==='function')window.portalApplyLibraryThemes(payload.documentThemes);
 }
 async function cloudPushSettings(){
- const {data:{session},error:sessionError}=await cloudClient.auth.getSession();
- if(sessionError)throw sessionError;
- if(!session)throw new Error('Session Supabase absente. Reconnectez le portail.');
+ const {data:{session}}=await cloudClient.auth.getSession();if(!session)return;
  const row={id:PORTAL_SETTINGS_ID,payload:cloudSettingsPayload(),updated_at:new Date().toISOString()};
- const {error}=await cloudClient.from('portal_settings').upsert(row,{onConflict:'id'});
- if(error)throw error;
- return true;
+ const {error}=await cloudClient.from('portal_settings').upsert(row,{onConflict:'id'});if(error)throw error;
 }
 async function cloudSyncSettings(){
  const {data:{session}}=await cloudClient.auth.getSession();if(!session)return;
@@ -153,7 +155,7 @@ async function cloudAutoSync(){
   // Bibliothèque : utiliser la même synchronisation automatique que les Actions.
   // Cela garantit la récupération des ressources Supabase même si postgres_changes ne livre aucun événement.
   if(typeof window.portalRefreshLibrary==='function') await window.portalRefreshLibrary();
-  // V6.2.28 : les paramètres ne sont pas relus pendant la synchronisation automatique.
+  // V6.2.27 : aucun pull automatique des paramètres.
   // Actions, dossiers et bibliothèque conservent leur synchronisation automatique.
   cloudSetState('Synchronisé',true);
   cloudMessage('Synchronisation automatique : '+new Date().toLocaleTimeString('fr-FR'));
