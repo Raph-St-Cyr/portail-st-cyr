@@ -222,6 +222,8 @@ async function cloudAutoSync(){
   cloudMessage('Synchronisation automatique : '+new Date().toLocaleTimeString('fr-FR'));
  }catch(err){cloudSoftError(err)}
  finally{cloudAutoBusy=false}
+
+ try{if(typeof window.portalAnnuaireCloudSync==='function')await window.portalAnnuaireCloudSync()}catch(err){console.warn('[Annuaire auto-sync]',err)}
 }
 
 $('cloudLogin').onclick=()=>cloudLogin().catch(cloudSoftError);
@@ -275,6 +277,7 @@ setInterval(()=>cloudAutoSync(),10000);
 // ===== V6.1 — Supabase Realtime : mise à jour sans recharger la page =====
 let cloudRealtimeChannel=null;
 let cloudLibraryRealtimeChannel=null;
+let cloudAnnuaireRealtimeChannel=null;
 let cloudRealtimeTimer=null;
 let cloudLibraryRealtimeTimer=null;
 function cloudRealtimeRefresh(){
@@ -308,10 +311,20 @@ function cloudStartRealtime(){
     console.info('[Supabase Realtime Bibliothèque]',status);
    });
  }
+ if(!cloudAnnuaireRealtimeChannel){
+  cloudAnnuaireRealtimeChannel=cloudClient.channel('portail-annuaire-live')
+   .on('postgres_changes',{event:'*',schema:'public',table:'annuaire_contacts'},()=>{
+     if(typeof window.portalAnnuaireCloudSync==='function')window.portalAnnuaireCloudSync();
+   })
+   .on('postgres_changes',{event:'*',schema:'public',table:'portal_settings',filter:'key=eq.annuaire_categories'},()=>{
+     if(typeof window.portalAnnuaireCloudSync==='function')window.portalAnnuaireCloudSync();
+   })
+   .subscribe();
+ }
 }
 async function cloudStopRealtime(){
- const channels=[cloudRealtimeChannel,cloudLibraryRealtimeChannel].filter(Boolean);
- cloudRealtimeChannel=null;cloudLibraryRealtimeChannel=null;
+ const channels=[cloudRealtimeChannel,cloudLibraryRealtimeChannel,cloudAnnuaireRealtimeChannel].filter(Boolean);
+ cloudRealtimeChannel=null;cloudLibraryRealtimeChannel=null;cloudAnnuaireRealtimeChannel=null;
  for(const ch of channels){try{await cloudClient.removeChannel(ch)}catch(e){console.warn('[Supabase Realtime]',e)}}
 }
 cloudClient.auth.onAuthStateChange((_event,session)=>{if(session)cloudStartRealtime();else cloudStopRealtime()});
