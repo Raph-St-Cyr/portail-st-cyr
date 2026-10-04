@@ -174,6 +174,7 @@ save();render();
    if(commissionTitle)commissionTitle.style.display=key==='organisation'?'flex':'none';
    if(commissionBody)commissionBody.style.display=key==='organisation'?'':'none';
    const commune=$id('cfgCommune')?.closest('label');if(commune)commune.style.display=key==='organisation'?'':'none';
+   const acm=$id('settings')?.querySelector('.annuaire-category-manager');if(acm)acm.style.display=key==='organisation'?'':'none';
    document.querySelectorAll('#refManagers .ref-manager').forEach(x=>{
      const k=x.dataset.refKey;
      x.style.display=(key==='organisation'?(k==='elus'||k==='agents'):(key==='pilotage'?(k==='types'||k==='dStatuses'||k==='priorityLabels'):false))?'':'none';
