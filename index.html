@@ -226,6 +226,40 @@ body.auth-locked #mobileBottomNav{display:none!important}
  line-height:1!important;
 }
 </style>
+<style id="v6411-annuaire-desktop-icons-fix">
+@media (min-width:761px){
+ #portalAnnuaire .annuaire-grid .contact-card .contact-quick a,
+ #portalAnnuaire .annuaire-grid .contact-card .contact-actions a{
+   display:inline-flex!important;
+   align-items:center!important;
+   justify-content:center!important;
+   box-sizing:border-box!important;
+   width:44px!important;
+   min-width:44px!important;
+   max-width:44px!important;
+   height:44px!important;
+   min-height:44px!important;
+   padding:0!important;
+   margin:0 6px 0 0!important;
+   overflow:hidden!important;
+   white-space:nowrap!important;
+   text-indent:0!important;
+   font-size:0!important;
+   line-height:1!important;
+   text-decoration:none!important;
+ }
+ #portalAnnuaire .annuaire-grid .contact-card .contact-quick a > span,
+ #portalAnnuaire .annuaire-grid .contact-card .contact-actions a > span{
+   display:block!important;
+   width:auto!important;
+   height:auto!important;
+   overflow:visible!important;
+   font-size:22px!important;
+   line-height:1!important;
+   text-indent:0!important;
+ }
+}
+</style>
 </head><body class="auth-locked"><section id="authGate" aria-label="Connexion au portail municipal">
 <div class="auth-card">
 <div class="auth-lock-mark" aria-hidden="true">🔒</div>
@@ -245,7 +279,7 @@ body.auth-locked #mobileBottomNav{display:none!important}
 <div class="welcome-status-stack">
 <div class="welcome-date"><span>▦ &nbsp;<span id="portalToday"></span></span></div>
 <div id="supabaseConnectionIndicator" class="supabase-connection-indicator" aria-live="polite"><span class="supabase-dot"></span><span class="supabase-label">Supabase : vérification…</span></div>
-<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.4.10</div>
+<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.4.11</div>
 </div>
 
 </div>
