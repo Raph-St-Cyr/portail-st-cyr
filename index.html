@@ -113,7 +113,7 @@ body.auth-locked #mobileBottomNav{display:none!important}
 <div class="welcome-status-stack">
 <div class="welcome-date"><span>▦ &nbsp;<span id="portalToday"></span></span><strong>Bienvenue</strong></div>
 <div id="supabaseConnectionIndicator" class="supabase-connection-indicator" aria-live="polite"><span class="supabase-dot"></span><span class="supabase-label">Supabase : vérification…</span></div>
-<button type="button" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.3.10</div>
+<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.3.11</div>
 </div>
 
 </div>
@@ -202,4 +202,21 @@ body.auth-locked #mobileBottomNav{display:none!important}
 <script src="./js/06-supabase-securite-sync.js"></script>
 <script src="./js/07-pwa.js"></script>
 <script src="js/07-supabase-connection-indicator.js"></script>
-</body></html>
+<script id="v6311-settings-button-fallback">
+document.addEventListener('DOMContentLoaded',function(){
+  var b=document.getElementById('homeSettingsButton');
+  if(!b)return;
+  b.addEventListener('click',function(){
+    var h=document.getElementById('portalHome');
+    var p=document.getElementById('portalPilotage');
+    var l=document.getElementById('portalLibrary');
+    var st=document.getElementById('portalSettings');
+    if(h)h.hidden=true;
+    if(p)p.hidden=true;
+    if(l)l.hidden=true;
+    if(st)st.hidden=false;
+    if(window.portalSettingsLanding)window.portalSettingsLanding();
+    window.scrollTo(0,0);
+  });
+});
+</script></body></html>
