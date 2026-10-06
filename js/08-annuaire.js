@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
-const LK='saintcyr.annuaire.contacts.v1',CK='saintcyr.annuaire.categories.v1',SK='saintcyr.annuaire.subcategories.v1',PK='saintcyr.annuaire.pending.v1',DK='saintcyr.annuaire.deletes.v1';
+const LK='saintcyr.annuaire.contacts.v1',CK='saintcyr.annuaire.categories.v1',SK='saintcyr.annuaire.subcategories.v1',PK='saintcyr.annuaire.pending.v1',DK='saintcyr.annuaire.deletes.v1',RK='saintcyr.annuaire.refs.pending.v1';
 const DEF=['Élus','Agents communaux','Vienne Condrieu Agglomération','Département','Services de l’État','Associations','Prestataires','Secours / sécurité','Autres'];
 let contacts=[],cats=[],subs={},displayMode=localStorage.getItem('saintcyr.annuaire.display.v1')||'list';
 const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch{return d}};
@@ -46,18 +46,33 @@ function open(c={}){
  options();$('contactCategory').value=c.category||cats[0]||'';$('contactSubcategory').innerHTML=subOptions($('contactCategory').value,c.subcategory||'');$('deleteContact').hidden=!c.id;$('contactDialog').showModal();
 }
 async function client(){return window.portalCloudClient||null}
-async function up(c){let cl=await client();if(!cl)return;let {data:{session}}=await cl.auth.getSession();if(!session)return;let {error}=await cl.from('annuaire_contacts').upsert({id:c.id,payload:c,updated_at:c.updatedAt},{onConflict:'id'});if(error)throw error;let p=set(PK);p.delete(c.id);put(PK,p)}
-async function del(id){let cl=await client();if(!cl)return false;let {data:{session}}=await cl.auth.getSession();if(!session)return false;let {error}=await cl.from('annuaire_contacts').delete().eq('id',id);if(error)throw error;let d=set(DK);d.delete(id);put(DK,d);return true}
-async function saveRefs(){let cl=await client();if(!cl)return;let {data:{session}}=await cl.auth.getSession();if(!session)return;await cl.from('portal_settings').upsert([{key:'annuaire_categories',value:cats,updated_at:new Date().toISOString()},{key:'annuaire_subcategories',value:subs,updated_at:new Date().toISOString()}],{onConflict:'key'})}
+async function up(c){let cl=await client();if(!cl)return;let {data:{session}}=await cl.auth.getSession();if(!session)return;let {data:remote,error:re}=await cl.from('annuaire_contacts').select('updated_at').eq('id',c.id).maybeSingle();if(re)throw re;if(remote?.updated_at&&new Date(remote.updated_at)>new Date(c.updatedAt||0)){let p=set(PK);p.delete(c.id);put(PK,p);return}let {error}=await cl.from('annuaire_contacts').upsert({id:c.id,payload:c,updated_at:c.updatedAt},{onConflict:'id'});if(error)throw error;let p=set(PK);p.delete(c.id);put(PK,p)}
+async function del(id){let cl=await client();if(!cl)return false;let {data:{session}}=await cl.auth.getSession();if(!session)return false;const deletedAt=new Date().toISOString();let {error}=await cl.from('annuaire_contacts').upsert({id,payload:{id,_deleted:true,deletedAt},updated_at:deletedAt},{onConflict:'id'});if(error)throw error;let d=set(DK);d.delete(id);put(DK,d);let p=set(PK);p.delete(id);put(PK,p);return true}
+function markRefsPending(){localStorage.setItem(RK,'1')}
+async function saveRefs(){markRefsPending();let cl=await client();if(!cl)return false;let {data:{session}}=await cl.auth.getSession();if(!session)return false;const t=new Date().toISOString();let {error}=await cl.from('portal_settings').upsert([{key:'annuaire_categories',value:cats,updated_at:t},{key:'annuaire_subcategories',value:subs,updated_at:t}],{onConflict:'key'});if(error){console.warn('Annuaire catégories sync',error);return false}localStorage.removeItem(RK);return true}
 async function pull(){let cl=await client();if(!cl)return;let {data:{session}}=await cl.auth.getSession();if(!session)return;try{
- let {data:st}=await cl.from('portal_settings').select('key,value').in('key',['annuaire_categories','annuaire_subcategories']);
- for(const r of st||[]){if(r.key==='annuaire_categories'&&Array.isArray(r.value)&&r.value.length)cats=r.value;if(r.key==='annuaire_subcategories'&&r.value&&typeof r.value==='object')subs=r.value}
+ let refsPending=localStorage.getItem(RK)==='1';
+ if(refsPending)await saveRefs();
+ let {data:st,error:se}=await cl.from('portal_settings').select('key,value,updated_at').in('key',['annuaire_categories','annuaire_subcategories']);if(se)throw se;
+ if(localStorage.getItem(RK)!=='1'){for(const r of st||[]){if(r.key==='annuaire_categories'&&Array.isArray(r.value)&&r.value.length)cats=r.value;if(r.key==='annuaire_subcategories'&&r.value&&typeof r.value==='object')subs=r.value}}
  cats.forEach(c=>{if(!Array.isArray(subs[c]))subs[c]=[]});
  let {data,error}=await cl.from('annuaire_contacts').select('id,payload,updated_at');if(error)throw error;
  let p=set(PK),d=set(DK),ids=new Set((data||[]).map(x=>x.id)),lm=new Map(contacts.map(x=>[x.id,x])),next=[];
- for(const r of data||[]){if(d.has(r.id))continue;next.push(p.has(r.id)&&lm.has(r.id)?lm.get(r.id):{...r.payload,id:r.id,updatedAt:r.updated_at})}
- for(const c of contacts)if(!ids.has(c.id)&&!d.has(c.id)&&p.has(c.id))next.push(c);for(const id of d)p.delete(id)
- contacts=next;put(PK,p);save();render();for(const id of [...d])await del(id);for(const id of [...p]){let c=contacts.find(x=>x.id===id);if(c)await up(c)}
+ for(const r of data||[]){
+   if(d.has(r.id))continue;
+   if(r.payload&&r.payload._deleted){p.delete(r.id);continue}
+   const local=lm.get(r.id);
+   if(p.has(r.id)&&local){
+     const lt=new Date(local.updatedAt||0),rt=new Date(r.updated_at||0);
+     if(lt>rt){next.push(local);continue}
+     p.delete(r.id)
+   }
+   next.push({...r.payload,id:r.id,updatedAt:r.updated_at})
+ }
+ for(const c of contacts)if(!ids.has(c.id)&&!d.has(c.id)&&p.has(c.id))next.push(c);
+ contacts=next;put(PK,p);save();render();
+ for(const id of [...d])await del(id);
+ for(const id of [...p]){let c=contacts.find(x=>x.id===id);if(c)await up(c)}
  }catch(e){console.warn('Annuaire sync',e)}}
 document.addEventListener('DOMContentLoaded',()=>{
  async function importAnnuaireFile(file){
@@ -75,7 +90,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    const c={...raw,updatedAt:new Date().toISOString()};
    map.set(c.id,c);p.add(c.id);
   }
-  contacts=[...map.values()];put(PK,p);save();render();saveRefs();
+  contacts=[...map.values()];put(PK,p);save();render();markRefsPending();saveRefs();
   const cl=await client();let ok=0;
   if(cl){const {data:{session}}=await cl.auth.getSession();if(session){
    for(let i=0;i<incoming.length;i+=50){
@@ -95,15 +110,15 @@ load();render();$('importAnnuaire').onclick=()=>$('importAnnuaireFile').click();
  $('contactForm').onsubmit=e=>{e.preventDefault();let id=$('contactId').value||crypto.randomUUID(),old=contacts.find(c=>c.id===id)||{},c={...old,id,lastName:$('contactLastName').value.trim(),firstName:$('contactFirstName').value.trim(),category:$('contactCategory').value,subcategory:$('contactSubcategory').value,organization:$('contactOrganization').value.trim(),function:$('contactFunction').value.trim(),phone:$('contactPhone').value.trim(),mobile:$('contactMobile').value.trim(),email:$('contactEmail').value.trim(),address:$('contactAddress').value.trim(),postalCode:$('contactPostalCode').value.trim(),city:$('contactCity').value.trim(),notes:$('contactNotes').value.trim(),updatedAt:new Date().toISOString()};let i=contacts.findIndex(x=>x.id===id);i<0?contacts.push(c):contacts[i]=c;let p=set(PK);p.add(id);put(PK,p);save();$('contactDialog').close();render();up(c).catch(console.warn)};
  $('deleteContact').onclick=()=>{let id=$('contactId').value;if(!id||!confirm('Supprimer ce contact ?'))return;contacts=contacts.filter(c=>c.id!==id);let d=set(DK);d.add(id);put(DK,d);let p=set(PK);p.delete(id);put(PK,p);save();$('contactDialog').close();render();del(id).catch(e=>console.warn('Suppression contact',e))};
  $('contactCategoryToggle').onclick=()=>{let b=$('contactCategoryBody'),v=b.style.display==='none';b.style.display=v?'block':'none';$('contactCategoryToggle').textContent=v?'Masquer':'Afficher'};
- $('addContactCategory').onclick=()=>{let n=$('newContactCategory').value.trim();if(n&&!cats.includes(n)){cats.push(n);subs[n]=[];$('newContactCategory').value='';save();render();saveRefs()}};
+ $('addContactCategory').onclick=()=>{let n=$('newContactCategory').value.trim();if(n&&!cats.includes(n)){cats.push(n);subs[n]=[];$('newContactCategory').value='';save();render();markRefsPending();saveRefs()}};
  $('contactCategoryRows').onclick=e=>{
-  if(e.target.dataset.cm!==undefined){let i=+e.target.dataset.cm,j=i+Number(e.target.dataset.dir);if(j>=0&&j<cats.length){[cats[i],cats[j]]=[cats[j],cats[i]];save();render();saveRefs()}return}
-  if(e.target.dataset.cr!==undefined){let i=+e.target.dataset.cr,n=document.querySelector(`[data-ci="${i}"]`).value.trim(),old=cats[i];if(n&&n!==old&&!cats.includes(n)){cats[i]=n;subs[n]=subs[old]||[];delete subs[old];contacts.forEach(c=>{if(c.category===old){c.category=n;c.updatedAt=new Date().toISOString();let p=set(PK);p.add(c.id);put(PK,p);up(c).catch(console.warn)}});save();render();saveRefs()}return}
-  if(e.target.dataset.cd!==undefined){let i=+e.target.dataset.cd,old=cats[i];if(contacts.some(c=>c.category===old)){alert('Cette catégorie est utilisée par un contact.');return}cats.splice(i,1);delete subs[old];save();render();saveRefs();return}
-  if(e.target.dataset.sa!==undefined){let i=+e.target.dataset.sa,cat=cats[i],inp=document.querySelector(`[data-new-sub="${i}"]`),n=inp.value.trim();if(n&&!(subs[cat]||[]).includes(n)){subs[cat].push(n);inp.value='';save();render();saveRefs()}return}
-  if(e.target.dataset.sm!==undefined){let i=+e.target.dataset.sm,j=+e.target.dataset.sj,cat=cats[i],k=j+Number(e.target.dataset.dir),a=subs[cat]||[];if(k>=0&&k<a.length){[a[j],a[k]]=[a[k],a[j]];save();render();saveRefs()}return}
-  if(e.target.dataset.sr!==undefined){let i=+e.target.dataset.sr,j=+e.target.dataset.sj,cat=cats[i],a=subs[cat]||[],old=a[j],n=document.querySelector(`[data-si="${i}"][data-sj="${j}"]`).value.trim();if(n&&n!==old&&!a.includes(n)){a[j]=n;contacts.forEach(c=>{if(c.category===cat&&c.subcategory===old){c.subcategory=n;c.updatedAt=new Date().toISOString();let p=set(PK);p.add(c.id);put(PK,p);up(c).catch(console.warn)}});save();render();saveRefs()}return}
-  if(e.target.dataset.sd!==undefined){let i=+e.target.dataset.sd,j=+e.target.dataset.sj,cat=cats[i],a=subs[cat]||[],old=a[j];if(contacts.some(c=>c.category===cat&&c.subcategory===old)){alert('Cette sous-catégorie est utilisée par un contact.');return}a.splice(j,1);save();render();saveRefs()}
+  if(e.target.dataset.cm!==undefined){let i=+e.target.dataset.cm,j=i+Number(e.target.dataset.dir);if(j>=0&&j<cats.length){[cats[i],cats[j]]=[cats[j],cats[i]];save();render();markRefsPending();saveRefs()}return}
+  if(e.target.dataset.cr!==undefined){let i=+e.target.dataset.cr,n=document.querySelector(`[data-ci="${i}"]`).value.trim(),old=cats[i];if(n&&n!==old&&!cats.includes(n)){cats[i]=n;subs[n]=subs[old]||[];delete subs[old];contacts.forEach(c=>{if(c.category===old){c.category=n;c.updatedAt=new Date().toISOString();let p=set(PK);p.add(c.id);put(PK,p);up(c).catch(console.warn)}});save();render();markRefsPending();saveRefs()}return}
+  if(e.target.dataset.cd!==undefined){let i=+e.target.dataset.cd,old=cats[i];if(contacts.some(c=>c.category===old)){alert('Cette catégorie est utilisée par un contact.');return}cats.splice(i,1);delete subs[old];save();render();markRefsPending();saveRefs();return}
+  if(e.target.dataset.sa!==undefined){let i=+e.target.dataset.sa,cat=cats[i],inp=document.querySelector(`[data-new-sub="${i}"]`),n=inp.value.trim();if(n&&!(subs[cat]||[]).includes(n)){subs[cat].push(n);inp.value='';save();render();markRefsPending();saveRefs()}return}
+  if(e.target.dataset.sm!==undefined){let i=+e.target.dataset.sm,j=+e.target.dataset.sj,cat=cats[i],k=j+Number(e.target.dataset.dir),a=subs[cat]||[];if(k>=0&&k<a.length){[a[j],a[k]]=[a[k],a[j]];save();render();markRefsPending();saveRefs()}return}
+  if(e.target.dataset.sr!==undefined){let i=+e.target.dataset.sr,j=+e.target.dataset.sj,cat=cats[i],a=subs[cat]||[],old=a[j],n=document.querySelector(`[data-si="${i}"][data-sj="${j}"]`).value.trim();if(n&&n!==old&&!a.includes(n)){a[j]=n;contacts.forEach(c=>{if(c.category===cat&&c.subcategory===old){c.subcategory=n;c.updatedAt=new Date().toISOString();let p=set(PK);p.add(c.id);put(PK,p);up(c).catch(console.warn)}});save();render();markRefsPending();saveRefs()}return}
+  if(e.target.dataset.sd!==undefined){let i=+e.target.dataset.sd,j=+e.target.dataset.sj,cat=cats[i],a=subs[cat]||[],old=a[j];if(contacts.some(c=>c.category===cat&&c.subcategory===old)){alert('Cette sous-catégorie est utilisée par un contact.');return}a.splice(j,1);save();render();markRefsPending();saveRefs()}
  };
  pull();setInterval(pull,20000);window.addEventListener('focus',pull);document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 });
