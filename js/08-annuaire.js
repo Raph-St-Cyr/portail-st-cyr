@@ -10,8 +10,11 @@ function save(){localStorage.setItem(LK,JSON.stringify(contacts));localStorage.s
 function load(){contacts=read(LK,[]);cats=read(CK,[]);subs=read(SK,{});if(!cats.length)cats=[...DEF];cats.forEach(c=>{if(!Array.isArray(subs[c]))subs[c]=[]})}
 function subOptions(cat,selected=''){return '<option value="">Aucune</option>'+((subs[cat]||[]).map(s=>`<option value="${esc(s)}" ${s===selected?'selected':''}>${esc(s)}</option>`).join(''))}
 function options(){
+ const categorySelect=$('contactCategory'),dialog=$('contactDialog');
+ const currentCategory=(dialog?.open&&categorySelect)?categorySelect.value:'';
  const o=cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
- $('contactCategory').innerHTML=o;
+ categorySelect.innerHTML=o;
+ if(currentCategory&&cats.includes(currentCategory))categorySelect.value=currentCategory;
  let cv=$('contactCategoryFilter').value;
  $('contactCategoryFilter').innerHTML='<option value="">Toutes les catégories</option>'+o;
  $('contactCategoryFilter').value=cv;
