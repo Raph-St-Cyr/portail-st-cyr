@@ -57,7 +57,7 @@ async function pull(){let cl=await client();if(!cl)return;let {data:{session}}=a
  let p=set(PK),d=set(DK),ids=new Set((data||[]).map(x=>x.id)),lm=new Map(contacts.map(x=>[x.id,x])),next=[];
  for(const r of data||[]){if(d.has(r.id))continue;next.push(p.has(r.id)&&lm.has(r.id)?lm.get(r.id):{...r.payload,id:r.id,updatedAt:r.updated_at})}
  for(const c of contacts)if(!ids.has(c.id)&&!d.has(c.id)&&p.has(c.id))next.push(c);for(const id of d)p.delete(id)
- contacts=next;put(PK,p);save();render();for(const id of [...d])await del(id);for(const id of [...p]){let c=contacts.find(x=>x.id===id);if(c)await up(c)}
+ contacts=next;put(PK,p);save();if(!$('contactDialog')?.open)render();for(const id of [...d])await del(id);for(const id of [...p]){let c=contacts.find(x=>x.id===id);if(c)await up(c)}
  }catch(e){console.warn('Annuaire sync',e)}}
 document.addEventListener('DOMContentLoaded',()=>{
  load();render();$('newContact').onclick=()=>open();$('closeContact').onclick=$('cancelContact').onclick=()=>$('contactDialog').close();
