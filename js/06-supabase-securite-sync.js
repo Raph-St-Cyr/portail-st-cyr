@@ -190,9 +190,7 @@ function cloudApplySettingsPayload(payload){
 }
 async function cloudPushSettings(){
  const {data:{session}}=await cloudClient.auth.getSession();if(!session)return;
- const {data:current,error:readError}=await cloudClient.from('portal_settings').select('payload').eq('id',PORTAL_SETTINGS_ID).maybeSingle();if(readError)throw readError;
- const existing=(current&&current.payload&&typeof current.payload==='object')?current.payload:{};
- const row={id:PORTAL_SETTINGS_ID,payload:{...existing,...cloudSettingsPayload()},updated_at:new Date().toISOString()};
+ const row={id:PORTAL_SETTINGS_ID,payload:cloudSettingsPayload(),updated_at:new Date().toISOString()};
  const {error}=await cloudClient.from('portal_settings').upsert(row,{onConflict:'id'});if(error)throw error;
 }
 async function cloudSyncSettings(){
