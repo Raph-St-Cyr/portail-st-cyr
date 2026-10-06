@@ -60,7 +60,34 @@ async function pull(){let cl=await client();if(!cl)return;let {data:{session}}=a
  contacts=next;put(PK,p);save();render();for(const id of [...d])await del(id);for(const id of [...p]){let c=contacts.find(x=>x.id===id);if(c)await up(c)}
  }catch(e){console.warn('Annuaire sync',e)}}
 document.addEventListener('DOMContentLoaded',()=>{
- load();render();$('newContact').onclick=()=>open();$('closeContact').onclick=$('cancelContact').onclick=()=>$('contactDialog').close();
+ async function importAnnuaireFile(file){
+ try{
+  const data=JSON.parse(await file.text());
+  if(data.format!=='saintcyr-annuaire-v1'||!Array.isArray(data.contacts))throw new Error('Format de fichier non reconnu.');
+  const incoming=data.contacts.filter(c=>c&&c.id);
+  if(!incoming.length)throw new Error('Aucun contact à importer.');
+  if(!confirm(`Importer ${incoming.length} entrées dans l’annuaire ?\n\nLes contacts ayant le même identifiant seront mis à jour.`))return;
+  if(Array.isArray(data.categories))for(const c of data.categories)if(c&&!cats.includes(c))cats.push(c);
+  if(data.subcategories&&typeof data.subcategories==='object')for(const [c,a] of Object.entries(data.subcategories)){if(!Array.isArray(subs[c]))subs[c]=[];for(const x of (Array.isArray(a)?a:[]))if(x&&!subs[c].includes(x))subs[c].push(x)}
+  const map=new Map(contacts.map(c=>[c.id,c]));
+  const p=set(PK);
+  for(const raw of incoming){
+   const c={...raw,updatedAt:new Date().toISOString()};
+   map.set(c.id,c);p.add(c.id);
+  }
+  contacts=[...map.values()];put(PK,p);save();render();saveRefs();
+  const cl=await client();let ok=0;
+  if(cl){const {data:{session}}=await cl.auth.getSession();if(session){
+   for(let i=0;i<incoming.length;i+=50){
+    const batch=incoming.slice(i,i+50).map(raw=>{const c=contacts.find(x=>x.id===raw.id);return{id:c.id,payload:c,updated_at:c.updatedAt}});
+    const {error}=await cl.from('annuaire_contacts').upsert(batch,{onConflict:'id'});if(error)throw error;ok+=batch.length;
+   }
+   const pp=set(PK);for(const raw of incoming)pp.delete(raw.id);put(PK,pp);
+  }}
+  alert(`Import terminé : ${incoming.length} entrées intégrées${ok?` et ${ok} synchronisées dans le cloud`:''}.`);
+ }catch(e){console.warn('Import annuaire',e);alert('Import impossible : '+(e?.message||e))}
+}
+load();render();$('importAnnuaire').onclick=()=>$('importAnnuaireFile').click();$('importAnnuaireFile').onchange=e=>{const f=e.target.files&&e.target.files[0];if(f)importAnnuaireFile(f).finally(()=>{e.target.value=''})};$('newContact').onclick=()=>open();$('closeContact').onclick=$('cancelContact').onclick=()=>$('contactDialog').close();
  $('contactSearch').oninput=render;$('contactCategoryFilter').onchange=()=>{updateSubFilter();render()};$('contactSubcategoryFilter').onchange=render;
  $('contactCategory').onchange=()=>{$('contactSubcategory').innerHTML=subOptions($('contactCategory').value)};
  $('annuaireListMode').onclick=()=>{displayMode='list';localStorage.setItem('saintcyr.annuaire.display.v1',displayMode);render()};$('annuaireCardMode').onclick=()=>{displayMode='cards';localStorage.setItem('saintcyr.annuaire.display.v1',displayMode);render()};
