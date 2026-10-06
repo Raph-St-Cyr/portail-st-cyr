@@ -43,7 +43,7 @@ function render(){
 }
 function open(c={}){
  for(const [id,k] of [['contactId','id'],['contactLastName','lastName'],['contactFirstName','firstName'],['contactOrganization','organization'],['contactFunction','function'],['contactPhone','phone'],['contactMobile','mobile'],['contactEmail','email'],['contactAddress','address'],['contactPostalCode','postalCode'],['contactCity','city'],['contactNotes','notes']])$(id).value=c[k]||'';
- options();$('contactCategory').value=c.category||cats[0]||'';$('contactSubcategory').innerHTML=subOptions($('contactCategory').value,c.subcategory||'');$('deleteContact').hidden=!c.id;$('contactDialog').showModal();
+ const wantedCategory=c.category||cats[0]||'',wantedSubcategory=c.subcategory||'';options();$('contactCategory').value=wantedCategory;$('contactSubcategory').innerHTML=subOptions(wantedCategory,wantedSubcategory);$('contactSubcategory').value=wantedSubcategory;$('deleteContact').hidden=!c.id;$('contactDialog').showModal();
 }
 async function client(){return window.portalCloudClient||null}
 async function up(c){let cl=await client();if(!cl)return;let {data:{session}}=await cl.auth.getSession();if(!session)return;let {data:remote,error:re}=await cl.from('annuaire_contacts').select('updated_at').eq('id',c.id).maybeSingle();if(re)throw re;if(remote?.updated_at&&new Date(remote.updated_at)>new Date(c.updatedAt||0)){let p=set(PK);p.delete(c.id);put(PK,p);return}let {error}=await cl.from('annuaire_contacts').upsert({id:c.id,payload:c,updated_at:c.updatedAt},{onConflict:'id'});if(error)throw error;let p=set(PK);p.delete(c.id);put(PK,p)}
