@@ -1,4 +1,4 @@
-const CACHE='portail-st-cyr-v6.6.24-base21-categories-sync-reunions-correctif';
+const CACHE='portail-st-cyr-v6.6.25-ouverture-categorie-sync-reunions-correctif';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./js/01-pilotage.js','./js/04-navigation-bibliotheque.js','./js/05-mobile.js','./js/06-supabase-securite-sync.js','./js/07-pwa.js','./js/07-supabase-connection-indicator.js','./js/08-annuaire.js'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
