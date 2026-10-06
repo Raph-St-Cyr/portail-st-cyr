@@ -69,7 +69,16 @@ async function pull(){let cl=await client();if(!cl)return;let {data:{session}}=a
    next.push({...r.payload,id:r.id,updatedAt:r.updated_at})
  }
  for(const c of contacts)if(!ids.has(c.id)&&!d.has(c.id)&&p.has(c.id))next.push(c);
- contacts=next;put(PK,p);save();render();
+ contacts=next;put(PK,p);
+ let refsChanged=false;
+ for(const c of contacts){
+   const cat=String(c.category||'').trim(),sub=String(c.subcategory||'').trim();
+   if(cat&&!cats.includes(cat)){cats.push(cat);subs[cat]=[];refsChanged=true}
+   if(cat&&!Array.isArray(subs[cat])){subs[cat]=[];refsChanged=true}
+   if(cat&&sub&&!subs[cat].includes(sub)){subs[cat].push(sub);refsChanged=true}
+ }
+ save();render();
+ if(refsChanged){markRefsPending();await saveRefs()}
  for(const id of [...d])await del(id);
  for(const id of [...p]){let c=contacts.find(x=>x.id===id);if(c)await up(c)}
  }catch(e){console.warn('Annuaire sync',e)}}
