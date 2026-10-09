@@ -51,11 +51,29 @@ function open(c={}){
 async function client(){return window.portalCloudClient||null}
 async function up(c){let cl=await client();if(!cl)return;let {data:{session}}=await cl.auth.getSession();if(!session)return;let {error}=await cl.from('annuaire_contacts').upsert({id:c.id,payload:c,updated_at:c.updatedAt},{onConflict:'id'});if(error)throw error;let p=set(PK);p.delete(c.id);put(PK,p)}
 async function del(id){let cl=await client();if(!cl)return false;let {data:{session}}=await cl.auth.getSession();if(!session)return false;let {error}=await cl.from('annuaire_contacts').delete().eq('id',id);if(error)throw error;let d=set(DK);d.delete(id);put(DK,d);return true}
-async function saveRefs(){let cl=await client();if(!cl)return;let {data:{session}}=await cl.auth.getSession();if(!session)return;await cl.from('portal_settings').upsert([{key:'annuaire_categories',value:cats,updated_at:new Date().toISOString()},{key:'annuaire_subcategories',value:subs,updated_at:new Date().toISOString()}],{onConflict:'key'})}
+async function saveRefs(){
+ let cl=await client();if(!cl)throw new Error('Client Supabase indisponible');
+ let {data:{session}}=await cl.auth.getSession();if(!session)throw new Error('Session Supabase absente');
+ // portal_settings utilise l'architecture commune du portail : id + payload.
+ // On fusionne les références annuaire dans municipal_config sans écraser les autres paramètres.
+ let {data:row,error:readError}=await cl.from('portal_settings').select('payload').eq('id','municipal_config').maybeSingle();
+ if(readError)throw readError;
+ const payload=(row&&row.payload&&typeof row.payload==='object')?{...row.payload}:{};
+ payload.annuaireCategories=[...cats];
+ payload.annuaireSubcategories=JSON.parse(JSON.stringify(subs));
+ let {error}=await cl.from('portal_settings').upsert({id:'municipal_config',payload,updated_at:new Date().toISOString()},{onConflict:'id'});
+ if(error)throw error;
+}
 async function pull(){let cl=await client();if(!cl)return;let {data:{session}}=await cl.auth.getSession();if(!session)return;try{
- let {data:st}=await cl.from('portal_settings').select('key,value').in('key',['annuaire_categories','annuaire_subcategories']);
- for(const r of st||[]){if(r.key==='annuaire_categories'&&Array.isArray(r.value)&&r.value.length)cats=r.value;if(r.key==='annuaire_subcategories'&&r.value&&typeof r.value==='object')subs=r.value}
+ let {data:st,error:stError}=await cl.from('portal_settings').select('payload').eq('id','municipal_config').maybeSingle();
+ if(stError)throw stError;
+ const settingsPayload=(st&&st.payload&&typeof st.payload==='object')?st.payload:{};
+ // Supabase est la source de référence dès que les références annuaire y ont été initialisées.
+ if(Array.isArray(settingsPayload.annuaireCategories)&&settingsPayload.annuaireCategories.length)cats=[...settingsPayload.annuaireCategories];
+ if(settingsPayload.annuaireSubcategories&&typeof settingsPayload.annuaireSubcategories==='object'&&!Array.isArray(settingsPayload.annuaireSubcategories))subs={...settingsPayload.annuaireSubcategories};
  cats.forEach(c=>{if(!Array.isArray(subs[c]))subs[c]=[]});
+ // Écarter les anciennes sous-catégories locales de catégories qui n'existent plus dans Supabase.
+ subs=Object.fromEntries(cats.map(c=>[c,Array.isArray(subs[c])?subs[c]:[]]));
  let {data,error}=await cl.from('annuaire_contacts').select('id,payload,updated_at');if(error)throw error;
  let p=set(PK),d=set(DK),ids=new Set((data||[]).map(x=>x.id)),lm=new Map(contacts.map(x=>[x.id,x])),next=[];
  for(const r of data||[]){if(d.has(r.id))continue;next.push(p.has(r.id)&&lm.has(r.id)?lm.get(r.id):{...r.payload,id:r.id,updatedAt:r.updated_at})}
@@ -71,15 +89,15 @@ document.addEventListener('DOMContentLoaded',()=>{
  $('contactForm').onsubmit=e=>{e.preventDefault();let id=$('contactId').value||crypto.randomUUID(),old=contacts.find(c=>c.id===id)||{},c={...old,id,lastName:$('contactLastName').value.trim(),firstName:$('contactFirstName').value.trim(),category:$('contactCategory').value,subcategory:$('contactSubcategory').value,organization:$('contactOrganization').value.trim(),function:$('contactFunction').value.trim(),phone:$('contactPhone').value.trim(),mobile:$('contactMobile').value.trim(),email:$('contactEmail').value.trim(),address:$('contactAddress').value.trim(),postalCode:$('contactPostalCode').value.trim(),city:$('contactCity').value.trim(),notes:$('contactNotes').value.trim(),updatedAt:new Date().toISOString()};let i=contacts.findIndex(x=>x.id===id);i<0?contacts.push(c):contacts[i]=c;let p=set(PK);p.add(id);put(PK,p);save();$('contactDialog').close();render();up(c).catch(console.warn)};
  $('deleteContact').onclick=()=>{let id=$('contactId').value;if(!id||!confirm('Supprimer ce contact ?'))return;contacts=contacts.filter(c=>c.id!==id);let d=set(DK);d.add(id);put(DK,d);let p=set(PK);p.delete(id);put(PK,p);save();$('contactDialog').close();render();del(id).catch(e=>console.warn('Suppression contact',e))};
  $('contactCategoryToggle').onclick=()=>{let b=$('contactCategoryBody'),v=b.style.display==='none';b.style.display=v?'block':'none';$('contactCategoryToggle').textContent=v?'Masquer':'Afficher'};
- $('addContactCategory').onclick=()=>{let n=$('newContactCategory').value.trim();if(n&&!cats.includes(n)){cats.push(n);subs[n]=[];$('newContactCategory').value='';save();render();saveRefs()}};
+ $('addContactCategory').onclick=()=>{let n=$('newContactCategory').value.trim();if(n&&!cats.includes(n)){cats.push(n);subs[n]=[];$('newContactCategory').value='';save();render();saveRefs().catch(e=>{console.error('Synchro catégories annuaire',e);alert('La catégorie est enregistrée sur cet appareil mais la synchronisation Supabase a échoué.')})}};
  $('contactCategoryRows').onclick=e=>{
-  if(e.target.dataset.cm!==undefined){let i=+e.target.dataset.cm,j=i+Number(e.target.dataset.dir);if(j>=0&&j<cats.length){[cats[i],cats[j]]=[cats[j],cats[i]];save();render();saveRefs()}return}
-  if(e.target.dataset.cr!==undefined){let i=+e.target.dataset.cr,n=document.querySelector(`[data-ci="${i}"]`).value.trim(),old=cats[i];if(n&&n!==old&&!cats.includes(n)){cats[i]=n;subs[n]=subs[old]||[];delete subs[old];contacts.forEach(c=>{if(c.category===old){c.category=n;c.updatedAt=new Date().toISOString();let p=set(PK);p.add(c.id);put(PK,p);up(c).catch(console.warn)}});save();render();saveRefs()}return}
-  if(e.target.dataset.cd!==undefined){let i=+e.target.dataset.cd,old=cats[i];if(contacts.some(c=>c.category===old)){alert('Cette catégorie est utilisée par un contact.');return}cats.splice(i,1);delete subs[old];save();render();saveRefs();return}
-  if(e.target.dataset.sa!==undefined){let i=+e.target.dataset.sa,cat=cats[i],inp=document.querySelector(`[data-new-sub="${i}"]`),n=inp.value.trim();if(n&&!(subs[cat]||[]).includes(n)){subs[cat].push(n);inp.value='';save();render();saveRefs()}return}
-  if(e.target.dataset.sm!==undefined){let i=+e.target.dataset.sm,j=+e.target.dataset.sj,cat=cats[i],k=j+Number(e.target.dataset.dir),a=subs[cat]||[];if(k>=0&&k<a.length){[a[j],a[k]]=[a[k],a[j]];save();render();saveRefs()}return}
-  if(e.target.dataset.sr!==undefined){let i=+e.target.dataset.sr,j=+e.target.dataset.sj,cat=cats[i],a=subs[cat]||[],old=a[j],n=document.querySelector(`[data-si="${i}"][data-sj="${j}"]`).value.trim();if(n&&n!==old&&!a.includes(n)){a[j]=n;contacts.forEach(c=>{if(c.category===cat&&c.subcategory===old){c.subcategory=n;c.updatedAt=new Date().toISOString();let p=set(PK);p.add(c.id);put(PK,p);up(c).catch(console.warn)}});save();render();saveRefs()}return}
-  if(e.target.dataset.sd!==undefined){let i=+e.target.dataset.sd,j=+e.target.dataset.sj,cat=cats[i],a=subs[cat]||[],old=a[j];if(contacts.some(c=>c.category===cat&&c.subcategory===old)){alert('Cette sous-catégorie est utilisée par un contact.');return}a.splice(j,1);save();render();saveRefs()}
+  if(e.target.dataset.cm!==undefined){let i=+e.target.dataset.cm,j=i+Number(e.target.dataset.dir);if(j>=0&&j<cats.length){[cats[i],cats[j]]=[cats[j],cats[i]];save();render();saveRefs().catch(e=>{console.error('Synchro catégories annuaire',e);alert('La catégorie est enregistrée sur cet appareil mais la synchronisation Supabase a échoué.')})}return}
+  if(e.target.dataset.cr!==undefined){let i=+e.target.dataset.cr,n=document.querySelector(`[data-ci="${i}"]`).value.trim(),old=cats[i];if(n&&n!==old&&!cats.includes(n)){cats[i]=n;subs[n]=subs[old]||[];delete subs[old];contacts.forEach(c=>{if(c.category===old){c.category=n;c.updatedAt=new Date().toISOString();let p=set(PK);p.add(c.id);put(PK,p);up(c).catch(console.warn)}});save();render();saveRefs().catch(e=>{console.error('Synchro catégories annuaire',e);alert('La catégorie est enregistrée sur cet appareil mais la synchronisation Supabase a échoué.')})}return}
+  if(e.target.dataset.cd!==undefined){let i=+e.target.dataset.cd,old=cats[i];if(contacts.some(c=>c.category===old)){alert('Cette catégorie est utilisée par un contact.');return}cats.splice(i,1);delete subs[old];save();render();saveRefs().catch(e=>{console.error('Synchro catégories annuaire',e);alert('La synchronisation Supabase des catégories a échoué.')});return}
+  if(e.target.dataset.sa!==undefined){let i=+e.target.dataset.sa,cat=cats[i],inp=document.querySelector(`[data-new-sub="${i}"]`),n=inp.value.trim();if(n&&!(subs[cat]||[]).includes(n)){subs[cat].push(n);inp.value='';save();render();saveRefs().catch(e=>{console.error('Synchro catégories annuaire',e);alert('La catégorie est enregistrée sur cet appareil mais la synchronisation Supabase a échoué.')})}return}
+  if(e.target.dataset.sm!==undefined){let i=+e.target.dataset.sm,j=+e.target.dataset.sj,cat=cats[i],k=j+Number(e.target.dataset.dir),a=subs[cat]||[];if(k>=0&&k<a.length){[a[j],a[k]]=[a[k],a[j]];save();render();saveRefs().catch(e=>{console.error('Synchro catégories annuaire',e);alert('La catégorie est enregistrée sur cet appareil mais la synchronisation Supabase a échoué.')})}return}
+  if(e.target.dataset.sr!==undefined){let i=+e.target.dataset.sr,j=+e.target.dataset.sj,cat=cats[i],a=subs[cat]||[],old=a[j],n=document.querySelector(`[data-si="${i}"][data-sj="${j}"]`).value.trim();if(n&&n!==old&&!a.includes(n)){a[j]=n;contacts.forEach(c=>{if(c.category===cat&&c.subcategory===old){c.subcategory=n;c.updatedAt=new Date().toISOString();let p=set(PK);p.add(c.id);put(PK,p);up(c).catch(console.warn)}});save();render();saveRefs().catch(e=>{console.error('Synchro catégories annuaire',e);alert('La catégorie est enregistrée sur cet appareil mais la synchronisation Supabase a échoué.')})}return}
+  if(e.target.dataset.sd!==undefined){let i=+e.target.dataset.sd,j=+e.target.dataset.sj,cat=cats[i],a=subs[cat]||[],old=a[j];if(contacts.some(c=>c.category===cat&&c.subcategory===old)){alert('Cette sous-catégorie est utilisée par un contact.');return}a.splice(j,1);save();render();saveRefs().catch(e=>{console.error('Synchro catégories annuaire',e);alert('La catégorie est enregistrée sur cet appareil mais la synchronisation Supabase a échoué.')})}
  };
  pull();setInterval(pull,20000);window.addEventListener('focus',pull);document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 });

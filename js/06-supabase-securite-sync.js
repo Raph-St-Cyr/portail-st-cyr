@@ -342,10 +342,10 @@ function cloudStartRealtime(){
    .on('postgres_changes',{event:'*',schema:'public',table:'annuaire_contacts'},()=>{
      if(typeof window.portalAnnuaireCloudSync==='function')window.portalAnnuaireCloudSync();
    })
-   .on('postgres_changes',{event:'*',schema:'public',table:'portal_settings',filter:'key=eq.annuaire_categories'},()=>{
+   .on('postgres_changes',{event:'*',schema:'public',table:'portal_settings',filter:'id=eq.municipal_config'},()=>{
      if(typeof window.portalAnnuaireCloudSync==='function')window.portalAnnuaireCloudSync();
    })
-   .on('postgres_changes',{event:'*',schema:'public',table:'portal_settings',filter:'key=eq.annuaire_subcategories'},()=>{
+   .on('postgres_changes',{event:'*',schema:'public',table:'portal_settings',filter:'id=eq.municipal_config'},()=>{
      if(typeof window.portalAnnuaireCloudSync==='function')window.portalAnnuaireCloudSync();
    })
    .subscribe();
