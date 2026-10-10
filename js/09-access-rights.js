@@ -13,6 +13,7 @@ async function loadMe(){const c=cl();if(!c)return null;const {data:{user}}=await
 function apply(){
  updateHomeAccount();
  const logged=!!me?.enabled;
+ document.querySelectorAll('[data-super-admin-only]').forEach(x=>x.hidden=!(logged&&me?.is_super_admin===true));
  document.body.classList.toggle('portal-actions-readonly',logged&&can('actions')==='read');
  document.body.classList.toggle('portal-library-readonly',logged&&can('bibliotheque')==='read'); const gate=$('accessGate');if(gate){gate.hidden=!!currentUser;gate.style.display=currentUser?'none':'flex'}
  document.querySelectorAll('#portalHome [data-module]').forEach(b=>{const m=b.dataset.module;let ok=m==='annuaire'?can('annuaire'):m==='settings'?can('parametres'):m==='pilotage'?(can('actions')||can('reunions')):m==='library'?can('bibliotheque'):true;b.hidden=currentUser?!ok:false});
