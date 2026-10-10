@@ -12,7 +12,9 @@ function updateHomeAccount(){
 async function loadMe(){const c=cl();if(!c)return null;const {data:{user}}=await c.auth.getUser();currentUser=user||null;if(!user){me=null;apply();return null}const {data,error}=await c.from('portal_user_permissions').select('*').eq('user_id',user.id).maybeSingle();if(error)console.warn(error);me=data||null;apply();return me}
 function apply(){
  updateHomeAccount();
- const logged=!!me?.enabled; const gate=$('accessGate');if(gate){gate.hidden=!!currentUser;gate.style.display=currentUser?'none':'flex'}
+ const logged=!!me?.enabled;
+ document.body.classList.toggle('portal-actions-readonly',logged&&can('actions')==='read');
+ document.body.classList.toggle('portal-library-readonly',logged&&can('bibliotheque')==='read'); const gate=$('accessGate');if(gate){gate.hidden=!!currentUser;gate.style.display=currentUser?'none':'flex'}
  document.querySelectorAll('#portalHome [data-module]').forEach(b=>{const m=b.dataset.module;let ok=m==='annuaire'?can('annuaire'):m==='settings'?can('parametres'):m==='pilotage'?(can('actions')||can('reunions')):m==='library'?can('bibliotheque'):true;b.hidden=currentUser?!ok:false});
  const write=can('annuaire','edit'); if($('newContact'))$('newContact').hidden=!write;
  if($('contactDialog'))$('contactDialog').classList.toggle('portal-readonly',!write);
@@ -30,7 +32,29 @@ document.addEventListener('DOMContentLoaded',()=>{
  cl()?.auth.onAuthStateChange((event)=>{setTimeout(loadMe,0);if((event==='SIGNED_IN'||event==='PASSWORD_RECOVERY')&&(/type=invite/.test(location.hash)||/type=invite/.test(location.search)))setTimeout(()=>$('firstPasswordDialog')?.showModal(),100)});
  $('gateLogin')?.addEventListener('click',async()=>{const m=$('gateMessage');m.textContent='Connexion…';const {error}=await cl().auth.signInWithPassword({email:$('gateEmail').value.trim(),password:$('gatePassword').value});m.textContent=error?error.message:''});
  $('firstPasswordForm')?.addEventListener('submit',async e=>{e.preventDefault();const a=$('firstPassword').value,b=$('firstPassword2').value,m=$('firstPasswordMessage');if(a!==b){m.textContent='Les deux mots de passe sont différents.';return}const {error}=await cl().auth.updateUser({password:a});if(error){m.textContent=error.message;return}history.replaceState(null,'',location.pathname+location.search.replace(/([?&])type=invite(&|$)/,'$1').replace(/[?&]$/,''));$('firstPasswordDialog').close();m.textContent=''});
- $('homeLogoutButton')?.addEventListener('click',async()=>{
+
+ // Défense en profondeur : un profil Lecture ne peut déclencher aucune commande d'écriture.
+ document.addEventListener('submit',e=>{
+   if(can('actions')==='read' && ['taskForm','dossierForm','meetingForm'].includes(e.target?.id)){
+     e.preventDefault();e.stopImmediatePropagation();alert('Accès en lecture seule.');return;
+   }
+   if(can('bibliotheque')==='read' && ['docForm','themeForm'].includes(e.target?.id)){
+     e.preventDefault();e.stopImmediatePropagation();alert('Accès en lecture seule.');return;
+   }
+ },true);
+ document.addEventListener('click',e=>{
+   const t=e.target?.closest?.('button,[data-doc-edit],[data-doc-delete],[data-addaction],[data-create-decision],[data-action-subdel],[data-subdel]');
+   if(!t)return;
+   if(can('actions')==='read' && (
+      ['addTop','newDossier','newMeeting','deleteTask','deleteDossier','deleteMeeting','actionAddSub'].includes(t.id) ||
+      t.matches('[data-addaction],[data-create-decision],[data-action-subdel],[data-subdel]')
+   )){e.preventDefault();e.stopImmediatePropagation();alert('Accès en lecture seule.');return}
+   if(can('bibliotheque')==='read' && (
+      ['openDocAdd'].includes(t.id) || t.matches('[data-doc-edit],[data-doc-delete]')
+   )){e.preventDefault();e.stopImmediatePropagation();alert('Accès en lecture seule.');return}
+ },true);
+
+  $('homeLogoutButton')?.addEventListener('click',async()=>{
    const btn=$('homeLogoutButton'); if(btn)btn.disabled=true;
    try{
      const {error}=await cl().auth.signOut(); if(error)throw error;
