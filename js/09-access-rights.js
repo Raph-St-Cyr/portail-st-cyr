@@ -4,8 +4,14 @@ let me=null,users=[],currentUser=null;
 const rank={none:0,read:1,edit:2,admin:3};
 function can(mod,level='read'){return !!me?.enabled&&(me.is_super_admin||rank[me[mod]||'none']>=rank[level])}
 window.portalCan=can;
+function updateHomeAccount(){
+ const name=$('homeAccountName'),email=$('homeAccountEmail');
+ if(name)name.textContent=(me?.display_name||currentUser?.email||'Utilisateur connecté');
+ if(email)email.textContent=(me?.display_name&&currentUser?.email)?currentUser.email:'';
+}
 async function loadMe(){const c=cl();if(!c)return null;const {data:{user}}=await c.auth.getUser();currentUser=user||null;if(!user){me=null;apply();return null}const {data,error}=await c.from('portal_user_permissions').select('*').eq('user_id',user.id).maybeSingle();if(error)console.warn(error);me=data||null;apply();return me}
 function apply(){
+ updateHomeAccount();
  const logged=!!me?.enabled; const gate=$('accessGate');if(gate){gate.hidden=!!currentUser;gate.style.display=currentUser?'none':'flex'}
  document.querySelectorAll('#portalHome [data-module]').forEach(b=>{const m=b.dataset.module;let ok=m==='annuaire'?can('annuaire'):m==='settings'?can('parametres'):m==='pilotage'?(can('actions')||can('reunions')):m==='library'?can('bibliotheque'):true;b.hidden=currentUser?!ok:false});
  const write=can('annuaire','edit'); if($('newContact'))$('newContact').hidden=!write;
@@ -24,5 +30,16 @@ document.addEventListener('DOMContentLoaded',()=>{
  cl()?.auth.onAuthStateChange((event)=>{setTimeout(loadMe,0);if((event==='SIGNED_IN'||event==='PASSWORD_RECOVERY')&&(/type=invite/.test(location.hash)||/type=invite/.test(location.search)))setTimeout(()=>$('firstPasswordDialog')?.showModal(),100)});
  $('gateLogin')?.addEventListener('click',async()=>{const m=$('gateMessage');m.textContent='Connexion…';const {error}=await cl().auth.signInWithPassword({email:$('gateEmail').value.trim(),password:$('gatePassword').value});m.textContent=error?error.message:''});
  $('firstPasswordForm')?.addEventListener('submit',async e=>{e.preventDefault();const a=$('firstPassword').value,b=$('firstPassword2').value,m=$('firstPasswordMessage');if(a!==b){m.textContent='Les deux mots de passe sont différents.';return}const {error}=await cl().auth.updateUser({password:a});if(error){m.textContent=error.message;return}history.replaceState(null,'',location.pathname+location.search.replace(/([?&])type=invite(&|$)/,'$1').replace(/[?&]$/,''));$('firstPasswordDialog').close();m.textContent=''});
+ $('homeLogoutButton')?.addEventListener('click',async()=>{
+   const btn=$('homeLogoutButton'); if(btn)btn.disabled=true;
+   try{
+     const {error}=await cl().auth.signOut(); if(error)throw error;
+     me=null;currentUser=null;apply();
+     if($('authEmail'))$('authEmail').value='';
+     if($('authPassword'))$('authPassword').value='';
+     window.scrollTo(0,0);
+   }catch(e){alert('Déconnexion impossible : '+(e.message||e))}
+   finally{if(btn)btn.disabled=false}
+ });
  $('inviteUser')?.addEventListener('click',invite);$('accessUsers')?.addEventListener('change',async e=>{let id=e.target.dataset.user||e.target.dataset.enabled;if(!id)return;try{await saveUser(id)}catch(x){alert('Enregistrement impossible : '+x.message);await listUsers()}});window.portalLoadAccessUsers=listUsers});
 })();

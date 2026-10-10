@@ -49,7 +49,7 @@ function render(){
 function open(c={}){
  const canWrite=!window.portalCan||window.portalCan('annuaire','edit');
  for(const [id,k] of [['contactId','id'],['contactLastName','lastName'],['contactFirstName','firstName'],['contactOrganization','organization'],['contactFunction','function'],['contactPhone','phone'],['contactMobile','mobile'],['contactEmail','email'],['contactAddress','address'],['contactPostalCode','postalCode'],['contactCity','city'],['contactNotes','notes']])$(id).value=c[k]||'';
- options();$('contactCategory').value=c.category||cats[0]||'';$('contactSubcategory').innerHTML=subOptions($('contactCategory').value,c.subcategory||'');$('deleteContact').hidden=!c.id||!canWrite;$('contactDialog').classList.toggle('portal-readonly',!canWrite);$('contactDialog').showModal();
+ options();$('contactCategory').value=c.category||cats[0]||'';$('contactSubcategory').innerHTML=subOptions($('contactCategory').value,c.subcategory||'');$('deleteContact').hidden=!c.id||!canWrite;const form=$('contactForm'),saveBtn=form?.querySelector('button[type=\"submit\"]');if(saveBtn)saveBtn.hidden=!canWrite;if($('cancelContact'))$('cancelContact').textContent=canWrite?'Annuler':'Fermer';form?.querySelectorAll('input:not([type=\"hidden\"]),select,textarea').forEach(el=>el.disabled=!canWrite);$('contactDialog').classList.toggle('portal-readonly',!canWrite);$('contactDialog').showModal();
 }
 async function client(){return window.portalCloudClient||null}
 async function up(c){let cl=await client();if(!cl)return;let {data:{session}}=await cl.auth.getSession();if(!session)return;let {error}=await cl.from('annuaire_contacts').upsert({id:c.id,payload:c,updated_at:c.updatedAt},{onConflict:'id'});if(error)throw error;let p=set(PK);p.delete(c.id);put(PK,p)}
