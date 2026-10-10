@@ -31,7 +31,7 @@ window.portalApplyLibraryThemes=(incoming)=>{
  if(typeof themeRows==='function' && el('themeDialog')?.open)themeRows();
  renderDocs();
 };
-const libraryWriteAllowed=()=>{const r=typeof window.portalCan==='function'?window.portalCan('bibliotheque'):'admin';return r==='edit'||r==='admin'};
+const libraryWriteAllowed=()=>typeof window.portalCan!=='function'||window.portalCan('bibliotheque','edit');
 const DOCVIEWKEY='saintcyr.portal.documentView.v1';let docView=localStorage.getItem(DOCVIEWKEY)==='list'?'list':'folders';
 function updateThemeSelectors(){let previous=el('docCategory').value,filter=el('docFilter').value;el('docCategory').innerHTML=currentThemes.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');if(currentThemes.includes(previous))el('docCategory').value=previous;el('docFilter').innerHTML='<option value="">Toutes les thématiques</option>'+currentThemes.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');if(currentThemes.includes(filter))el('docFilter').value=filter}
 function updateCommissions(){let sel=el('docCommission'),old=sel.value;sel.innerHTML='<option value="">Sans commission</option>'+db.commissions.map(x=>'<option>'+esc(x)+'</option>').join('');sel.value=old||'';let filter=el('docCommissionFilter'),filterOld=filter.value;filter.innerHTML='<option value="">Toutes les commissions</option><option value="__none__">Sans commission</option>'+db.commissions.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');filter.value=[...filter.options].some(o=>o.value===filterOld)?filterOld:''}
