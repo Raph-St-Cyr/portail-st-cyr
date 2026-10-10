@@ -158,18 +158,18 @@ save();render();
  const $id=id=>document.getElementById(id);
  function landing(){
    $id('settingsLanding').hidden=false;$id('settingsDetail').hidden=true;
-   $id('settingsLibraryPanel').hidden=true;
+   $id('settingsLibraryPanel').hidden=true;if($id('settingsAccessPanel'))$id('settingsAccessPanel').hidden=true;
  }
  window.portalSettingsLanding=landing;
  function setCategory(key){
    $id('settingsLanding').hidden=true;$id('settingsDetail').hidden=false;
-   const titles={organisation:'🏛️ Organisation',pilotage:'🧭 Pilotage',bibliotheque:'🗂️ Bibliothèque',technique:'🛠️ Technique et maintenance'};
+   const titles={organisation:'🏛️ Organisation',pilotage:'🧭 Pilotage',bibliotheque:'🗂️ Bibliothèque',technique:'🛠️ Technique et maintenance',acces:'👥 Utilisateurs et droits'};
    $id('settingsCategoryTitle').textContent=titles[key]||'Paramètres';
    const ref=$id('settings')?.querySelector('.settings-referentials');
    const tech=[...$id('settings')?.querySelectorAll('.settings-tech')||[]];
    if(ref)ref.style.display=(key==='organisation'||key==='pilotage')?'block':'none';
    tech.forEach(x=>x.style.display=key==='technique'?'block':'none');
-   $id('settingsLibraryPanel').hidden=key!=='bibliotheque';if(key==='bibliotheque'&&window.portalRenderSettingsThemes)window.portalRenderSettingsThemes();
+   $id('settingsLibraryPanel').hidden=key!=='bibliotheque';if(key==='bibliotheque'&&window.portalRenderSettingsThemes)window.portalRenderSettingsThemes();if($id('settingsAccessPanel'))$id('settingsAccessPanel').hidden=key!=='acces';if(key==='acces'&&window.portalLoadAccessUsers)window.portalLoadAccessUsers();
    const commissionTitle=$id('commissionPanelTitle'), commissionBody=$id('commissionPanelBody');
    if(commissionTitle)commissionTitle.style.display=key==='organisation'?'flex':'none';
    if(commissionBody)commissionBody.style.display=key==='organisation'?'':'none';
