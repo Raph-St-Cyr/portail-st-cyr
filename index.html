@@ -372,7 +372,9 @@ body.portal-library-readonly [data-doc-edit],
 body.portal-library-readonly [data-doc-delete],
 body.portal-library-readonly #themeDialog{display:none!important}
 </style>
-</head><body class="auth-locked"><section id="authGate" aria-label="Connexion au portail municipal">
+<style id="v661815-access-compact">
+.access-user-card{border:1px solid #d9dee3;border-radius:10px;margin:8px 0;background:#fff;overflow:hidden}.access-user-card summary{list-style:none;display:flex;align-items:center;gap:9px;padding:11px 12px;cursor:pointer}.access-user-card summary::-webkit-details-marker{display:none}.access-user-card summary small{display:block;color:#66717b;margin-top:2px}.access-chevron{font-size:22px;line-height:1;transition:transform .15s}.access-user-card[open] .access-chevron{transform:rotate(90deg)}.access-user-card summary .pill{margin-left:auto}.access-user-details{padding:0 12px 12px}.access-rights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}.access-rights-grid label{display:flex;flex-direction:column;gap:4px}.access-account-actions{display:flex;justify-content:flex-end;margin-top:12px}
+</style></head><body class="auth-locked"><section id="authGate" aria-label="Connexion au portail municipal">
 <div class="auth-card">
 <div class="auth-lock-mark" aria-hidden="true">🔒</div>
 <h1>Portail municipal</h1>
@@ -395,7 +397,7 @@ body.portal-library-readonly #themeDialog{display:none!important}
 <div id="supabaseConnectionIndicator" class="supabase-connection-indicator" aria-live="polite"><span class="supabase-dot"></span><span class="supabase-label">Supabase : vérification…</span></div>
 <div id="homeAccount" class="welcome-account" aria-live="polite"><strong id="homeAccountName">Utilisateur connecté</strong><small id="homeAccountEmail"></small></div>
 <button type="button" id="homeLogoutButton" class="welcome-logout-button" aria-label="Se déconnecter" title="Se déconnecter">↪ Se déconnecter</button>
-<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.6.18.14</div>
+<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.6.18.15</div>
 </div>
 
 </div>
@@ -487,9 +489,9 @@ body.portal-library-readonly #themeDialog{display:none!important}
 <div id="classNone" class="hidden"><p class="hint">Cette action ne sera rattachée à aucun dossier.</p></div></div><label>Priorité<select id="priority"><option value="P1">P1 — Critique</option><option value="P2">P2 — Urgent</option><option value="P3" selected>P3 — Normal</option><option value="P4">P4 — Secondaire</option></select></label><label>État<select id="status"></select></label><label>Élu pilote<select id="pilot"></select></label><label>Échéance<input id="due" type="date"></label><label class="wide">Lien vers un document <span class="muted">(facultatif)</span><input id="link" type="url" placeholder="https://…"></label><label class="wide">Ajouter une note à l'historique<textarea id="note" rows="2" placeholder="Compte rendu, note…"></textarea></label></div><div class="action-subtasks"><h3>Sous-tâches de cette action <span id="actionProgress" class="muted"></span></h3><p class="muted">Les étapes cochées contribuent à l'avancement de l'action, puis du dossier parent.</p><div id="actionSubRows"></div><div class="fields"><label class="wide">Nouvelle sous-tâche<input id="actionSubTitle" placeholder="Ex. Demander trois devis"></label><label>Agent / intervenant<select id="actionSubOwner"></select></label><label>Échéance<input type="date" id="actionSubDue"></label><label style="display:block"><input id="actionSubDecision" type="checkbox" style="width:auto"> Décision</label></div><button type="button" class="secondary" id="actionAddSub">+ Ajouter une sous-tâche</button></div><div id="historyWrap" class="hidden"><h3>Historique</h3><div id="history" class="timeline"></div></div><div class="actions"><button type="button" class="danger hidden" id="deleteTask">Supprimer</button><button type="button" class="secondary" id="cancel">Annuler</button><button type="submit">Enregistrer l'action</button></div></form></dialog>
 <!-- MODULE 01 · Données et actions : maintenir les dépendances et cet ordre -->
 <!-- MODULE MÉTIER : scripts regroupés pour garantir la portée et le chargement des fonctions -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./js/01-pilotage.js?v=661814"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./js/01-pilotage.js?v=661815"></script>
 <!-- MODULE 04 · Accueil, navigation et bibliothèque -->
-<script src="./js/04-navigation-bibliotheque.js?v=661813?v=667g"></script><nav class="mobile-bottom-nav" aria-label="Navigation mobile" id="mobileBottomNav"><button type="button" data-mobile="home" aria-current="page"><span class="nav-symbol">⌂</span>Accueil</button><button type="button" data-mobile="pilotage"><span class="nav-symbol">☷</span>Pilotage</button><button type="button" data-mobile="new"><span class="nav-symbol">＋</span>Action</button><button type="button" data-mobile="library"><span class="nav-symbol">▤</span>Documents</button></nav><script src="./js/05-mobile.js?v=667g"></script>
+<script src="./js/04-navigation-bibliotheque.js?v=661815"></script><nav class="mobile-bottom-nav" aria-label="Navigation mobile" id="mobileBottomNav"><button type="button" data-mobile="home" aria-current="page"><span class="nav-symbol">⌂</span>Accueil</button><button type="button" data-mobile="pilotage"><span class="nav-symbol">☷</span>Pilotage</button><button type="button" data-mobile="new"><span class="nav-symbol">＋</span>Action</button><button type="button" data-mobile="library"><span class="nav-symbol">▤</span>Documents</button></nav><script src="./js/05-mobile.js?v=667g"></script>
 <script src="./js/06-supabase-securite-sync.js?v=66186"></script>
 <script src="./js/07-pwa.js?v=667g"></script>
 <script src="js/07-supabase-connection-indicator.js?v=667g"></script>
@@ -511,7 +513,7 @@ document.addEventListener('DOMContentLoaded',function(){
   });
 });
 </script><script src="js/08-annuaire.js?v=66188"></script>
-<script src="js/09-access-rights.js?v=661812"></script>
+<script src="js/09-access-rights.js?v=661815"></script>
 <script id="v643-annuaire-opening-fix">
 document.addEventListener('DOMContentLoaded', function () {
   var annuaireButton = document.querySelector('#portalHome [data-module="annuaire"]');
