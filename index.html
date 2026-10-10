@@ -355,7 +355,7 @@ body.auth-locked #mobileBottomNav{display:none!important}
 <div class="welcome-status-stack">
 <div class="welcome-date"><span>▦ &nbsp;<span id="portalToday"></span></span></div>
 <div id="supabaseConnectionIndicator" class="supabase-connection-indicator" aria-live="polite"><span class="supabase-dot"></span><span class="supabase-label">Supabase : vérification…</span></div>
-<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.6.18.8</div>
+<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.6.18.9</div>
 </div>
 
 </div>
@@ -408,12 +408,13 @@ body.auth-locked #mobileBottomNav{display:none!important}
 <div id="refManagers"></div>
 <div class="fields"><label>Nom de la commune<input id="cfgCommune" maxlength="120"></label></div>
 <textarea id="cfgElus" hidden></textarea><textarea id="cfgAgents" hidden></textarea><textarea id="cfgTypes" hidden></textarea><textarea id="cfgDStatuses" hidden></textarea><textarea id="cfgPriorityLabels" hidden></textarea><button id="saveReferentials" type="button" hidden>Enregistrer</button>
-<p class="hint">Une valeur déjà utilisée dans une fiche est protégée contre la suppression.</p><div class="annuaire-category-manager"><div class="ref-manager-title"><h3>Catégories de contacts <span class="muted" id="contactCategoryCount"></span></h3><button type="button" class="secondary ref-toggle" id="contactCategoryToggle">Afficher</button></div><div id="contactCategoryBody" style="display:none"><p class="muted">Personnalisez les catégories et leurs sous-catégories utilisées dans l’annuaire.</p><div id="contactCategoryRows"></div><div class="ref-add"><input id="newContactCategory" maxlength="80" placeholder="Ex. Fournisseurs"><button type="button" id="addContactCategory">+ Ajouter</button></div></div></div><div id="settingsBackup" class="settings-tech"><h2>Sauvegarde et transfert</h2><p>Les actions restent sauvegardées localement et synchronisées avec Supabase. Les commissions, référentiels et thématiques de la bibliothèque sont désormais partagés entre les appareils connectés.</p><div class="toolbar"><button id="backup">Télécharger une sauvegarde JSON</button><label style="display:block"><span class="pill">Importer une sauvegarde JSON</span><input id="restore" type="file" accept=".json,application/json" style="margin-top:8px"></label><button id="demo" class="secondary">Charger 3 exemples fictifs</button><button id="clear" class="danger">Effacer les données</button></div><p class="hint">Une importation remplace toutes les données présentes. Aucune donnée n'est envoyée à un serveur. Éviter d'enregistrer des informations personnelles sensibles dans cette version locale.</p></div></div></section>
+<p class="hint">Une valeur déjà utilisée dans une fiche est protégée contre la suppression.</p><div class="annuaire-category-manager"><div class="ref-manager-title"><h3>Catégories de contacts <span class="muted" id="contactCategoryCount"></span></h3><button type="button" class="secondary ref-toggle" id="contactCategoryToggle">Afficher</button></div><div id="contactCategoryBody" style="display:none"><p class="muted">Personnalisez les catégories et leurs sous-catégories utilisées dans l’annuaire.</p><div id="contactCategoryRows"></div><div class="ref-add"><input id="newContactCategory" maxlength="80" placeholder="Ex. Fournisseurs"><button type="button" id="addContactCategory">+ Ajouter</button></div></div></div><div id="settingsBackup" class="settings-tech"><h2>Sauvegarde et transfert</h2><p>Les actions restent sauvegardées localement et synchronisées avec Supabase. Les commissions, référentiels et thématiques de la bibliothèque sont désormais partagés entre les appareils connectés.</p><div class="toolbar"><button id="backup">Télécharger une sauvegarde JSON</button><label style="display:block"><span class="pill">Importer une sauvegarde JSON</span><input id="restore" type="file" accept=".json,application/json" style="margin-top:8px"></label><button id="demo" class="secondary">Charger 3 exemples fictifs</button><button id="clear" class="danger">Effacer les données</button></div><p class="hint">Une importation remplace toutes les données présentes. Aucune donnée n'est envoyée à un serveur. Éviter d'enregistrer des informations personnelles sensibles dans cette version locale.</p></div></div>
 <div id="settingsAccessPanel" class="panel" hidden>
 <div class="section-title"><div><h2>Utilisateurs et droits d’accès</h2><p class="muted">Invitez un utilisateur puis choisissez les modules auxquels il peut accéder.</p></div></div>
 <div class="access-invite"><h3>Inviter un utilisateur</h3><div class="fields"><label>Nom affiché<input id="inviteName" maxlength="120" placeholder="Ex. Jean DUPONT"></label><label>E-mail<input id="inviteEmail" type="email" placeholder="nom@exemple.fr"></label><label>Annuaire<select id="inviteAnnuaire"><option value="read" selected>Lecture</option><option value="edit">Édition</option><option value="admin">Administration</option><option value="none">Aucun</option></select></label></div><button type="button" id="inviteUser">✉ Envoyer l’invitation</button><p class="hint">Pour cette première version, les nouveaux comptes sont créés sans accès aux autres modules.</p></div>
 <hr><h3>Comptes et autorisations</h3><div id="accessUsers"><p class="muted">Chargement…</p></div>
 </div>
+</section>
 <div id="settingsLibraryPanel" class="panel" hidden>
 <div class="ref-manager" id="libraryThemeManager">
 <div class="ref-manager-title"><h3>Thématiques de la bibliothèque <span class="muted" id="settingsThemeCount"></span></h3><button type="button" class="secondary ref-toggle" id="settingsThemeToggle">Afficher</button></div>
@@ -472,7 +473,7 @@ document.addEventListener('DOMContentLoaded',function(){
   });
 });
 </script><script src="js/08-annuaire.js?v=66188"></script>
-<script src="js/09-access-rights.js?v=66188"></script>
+<script src="js/09-access-rights.js?v=66189"></script>
 <script id="v643-annuaire-opening-fix">
 document.addEventListener('DOMContentLoaded', function () {
   var annuaireButton = document.querySelector('#portalHome [data-module="annuaire"]');
