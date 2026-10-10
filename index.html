@@ -87,6 +87,14 @@ body.auth-locked #mobileBottomNav{display:none!important}
 .auth-card .auth-status.error{color:#9d2f2f}
 .auth-lock-mark{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:#f4e9ed;color:#792e43;font-size:25px;margin-bottom:16px}
 </style>
+<style id="v661811-home-account">
+.welcome-account{box-sizing:border-box;min-width:142px;background:rgba(255,255,255,.94);color:#111;border:1px solid rgba(255,255,255,.72);border-radius:10px;padding:7px 10px;box-shadow:0 2px 8px rgba(0,0,0,.12);font-size:11px;line-height:1.25;text-align:left}
+.welcome-account strong{display:block;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.welcome-account small{display:block;max-width:210px;margin-top:2px;color:#59636d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.welcome-logout-button{box-sizing:border-box;min-width:142px;min-height:31px;padding:6px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.72);background:rgba(255,255,255,.94);color:#792e43;font:inherit;font-size:11px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);text-align:left}
+.welcome-logout-button:hover{background:#fff}
+@media(max-width:640px){.welcome-account,.welcome-logout-button{min-width:142px!important}}
+</style>
 <style id="v630-settings-home">
 .welcome-settings-button{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.72);background:rgba(255,255,255,.94);color:#222;border-radius:999px;padding:7px 12px;font:inherit;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);margin-bottom:6px}
 .welcome-settings-button:hover{background:#fff}
@@ -355,7 +363,9 @@ body.auth-locked #mobileBottomNav{display:none!important}
 <div class="welcome-status-stack">
 <div class="welcome-date"><span>▦ &nbsp;<span id="portalToday"></span></span></div>
 <div id="supabaseConnectionIndicator" class="supabase-connection-indicator" aria-live="polite"><span class="supabase-dot"></span><span class="supabase-label">Supabase : vérification…</span></div>
-<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.6.18.9</div>
+<div id="homeAccount" class="welcome-account" aria-live="polite"><strong id="homeAccountName">Utilisateur connecté</strong><small id="homeAccountEmail"></small></div>
+<button type="button" id="homeLogoutButton" class="welcome-logout-button" aria-label="Se déconnecter" title="Se déconnecter">↪ Se déconnecter</button>
+<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.6.18.11</div>
 </div>
 
 </div>
@@ -369,8 +379,6 @@ body.auth-locked #mobileBottomNav{display:none!important}
 </div>
 <div class="welcome-links" aria-label="Liens utiles">
 <a href="http://stcyrsurlerhone.fr/" target="_blank" rel="noopener noreferrer">🌐 Site internet</a>
-<a href="https://admin.illiwap.com/fr/stations/69193" target="_blank" rel="noopener noreferrer">📣 Administration Illiwap</a>
-<a href="https://geo.vienne-condrieu-agglomeration.fr/adws/app/c8480c65-3997-11e8-bbe5-c7df9379fcac/index.html" target="_blank" rel="noopener noreferrer">🗺️ Cartothèque VCA</a>
 </div>
 
 
@@ -473,7 +481,7 @@ document.addEventListener('DOMContentLoaded',function(){
   });
 });
 </script><script src="js/08-annuaire.js?v=66188"></script>
-<script src="js/09-access-rights.js?v=66189"></script>
+<script src="js/09-access-rights.js?v=661811"></script>
 <script id="v643-annuaire-opening-fix">
 document.addEventListener('DOMContentLoaded', function () {
   var annuaireButton = document.querySelector('#portalHome [data-module="annuaire"]');
