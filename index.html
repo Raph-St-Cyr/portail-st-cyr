@@ -411,7 +411,11 @@ body.portal-library-readonly #themeDialog{display:none!important}
 <div id="supabaseConnectionIndicator" class="supabase-connection-indicator" aria-live="polite"><span class="supabase-dot"></span><span class="supabase-label">Supabase : vérification…</span></div>
 <div id="homeAccount" class="welcome-account" aria-live="polite"><strong id="homeAccountName">Utilisateur connecté</strong><small id="homeAccountEmail"></small></div>
 <button type="button" id="homeLogoutButton" class="welcome-logout-button" aria-label="Se déconnecter" title="Se déconnecter">↪ Se déconnecter</button>
-<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.6.18.27</div>
+<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div id="superAdminExternalLinks" hidden style="display:none;flex-direction:column;gap:5px;align-items:stretch">
+<a href="https://admin.illiwap.com/fr/stations/69193" target="_blank" rel="noopener" class="welcome-settings-button" style="text-decoration:none;margin:0!important">📣 <span>Administration Illiwap</span></a>
+<a href="https://geo.vienne-condrieu-agglomeration.fr/adws/app/c8480c65-3997-11e8-bbe5-c7df9379fcac/index.html" target="_blank" rel="noopener" class="welcome-settings-button" style="text-decoration:none;margin:0!important">🗺️ <span>Cartothèque VCA</span></a>
+</div>
+<div class="welcome-version">V6.6.18.28</div>
 </div>
 
 </div>
@@ -570,4 +574,27 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 
+
+<script id="v661828-superadmin-links">
+(function(){
+  async function refreshSuperAdminLinks(){
+    var box=document.getElementById('superAdminExternalLinks');
+    if(!box) return;
+    box.hidden=true; box.style.display='none';
+    try{
+      if(!window.supabaseClient) return;
+      var u=(await window.supabaseClient.auth.getUser()).data.user;
+      if(!u) return;
+      var q=await window.supabaseClient.from('portal_user_permissions')
+        .select('enabled,is_super_admin').eq('user_id',u.id).maybeSingle();
+      var ok=!!(q.data && q.data.enabled===true && q.data.is_super_admin===true);
+      box.hidden=!ok; box.style.display=ok?'flex':'none';
+    }catch(e){}
+  }
+  window.addEventListener('load',function(){
+    refreshSuperAdminLinks();
+    setTimeout(refreshSuperAdminLinks,800);
+  });
+})();
+</script>
 </body></html>
