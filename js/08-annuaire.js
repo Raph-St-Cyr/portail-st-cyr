@@ -7,6 +7,7 @@ const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify
 const set=k=>new Set(read(k,[])),put=(k,x)=>localStorage.setItem(k,JSON.stringify([...x]));
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function save(){localStorage.setItem(LK,JSON.stringify(contacts));localStorage.setItem(CK,JSON.stringify(cats));localStorage.setItem(SK,JSON.stringify(subs))}
+function stateSignature(){return JSON.stringify({contacts,cats,subs})}
 function load(){contacts=read(LK,[]);cats=read(CK,[]);subs=read(SK,{});if(!cats.length)cats=[...DEF];cats.forEach(c=>{if(!Array.isArray(subs[c]))subs[c]=[]})}
 function subOptions(cat,selected=''){return '<option value="">Aucune</option>'+((subs[cat]||[]).map(s=>`<option value="${esc(s)}" ${s===selected?'selected':''}>${esc(s)}</option>`).join(''))}
 function options(){
@@ -68,6 +69,7 @@ async function saveRefs(){
  if(error)throw error;
 }
 async function pull(){let cl=await client();if(!cl)return;let {data:{session}}=await cl.auth.getSession();if(!session)return;try{
+ const beforeSync=stateSignature();
  let {data:st,error:stError}=await cl.from('portal_settings').select('payload').eq('id','municipal_config').maybeSingle();
  if(stError)throw stError;
  const settingsPayload=(st&&st.payload&&typeof st.payload==='object')?st.payload:{};
@@ -81,7 +83,7 @@ async function pull(){let cl=await client();if(!cl)return;let {data:{session}}=a
  let p=set(PK),d=set(DK),ids=new Set((data||[]).map(x=>x.id)),lm=new Map(contacts.map(x=>[x.id,x])),next=[];
  for(const r of data||[]){if(d.has(r.id))continue;next.push(p.has(r.id)&&lm.has(r.id)?lm.get(r.id):{...r.payload,id:r.id,updatedAt:r.updated_at})}
  for(const c of contacts)if(!ids.has(c.id)&&!d.has(c.id)&&p.has(c.id))next.push(c);for(const id of d)p.delete(id)
- contacts=next;put(PK,p);save();if(!$('contactDialog')?.open)render();for(const id of [...d])await del(id);for(const id of [...p]){let c=contacts.find(x=>x.id===id);if(c)await up(c)}
+ contacts=next;put(PK,p);save();const annuaireChanged=stateSignature()!==beforeSync;if(annuaireChanged&&!$('contactDialog')?.open)render();for(const id of [...d])await del(id);for(const id of [...p]){let c=contacts.find(x=>x.id===id);if(c)await up(c)}
  }catch(e){console.warn('Annuaire sync',e)}}
 document.addEventListener('DOMContentLoaded',()=>{
  load();render();$('newContact').onclick=()=>{if(!window.portalCan||window.portalCan('annuaire','edit'))open()};$('closeContact').onclick=$('cancelContact').onclick=()=>$('contactDialog').close();
