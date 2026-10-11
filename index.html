@@ -407,7 +407,7 @@ body.portal-library-readonly #themeDialog{display:none!important}
 <div id="supabaseConnectionIndicator" class="supabase-connection-indicator" aria-live="polite"><span class="supabase-dot"></span><span class="supabase-label">Supabase : vérification…</span></div>
 <div id="homeAccount" class="welcome-account" aria-live="polite"><strong id="homeAccountName">Utilisateur connecté</strong><small id="homeAccountEmail"></small></div>
 <button type="button" id="homeLogoutButton" class="welcome-logout-button" aria-label="Se déconnecter" title="Se déconnecter">↪ Se déconnecter</button>
-<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.6.18.25</div>
+<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.6.18.26</div>
 </div>
 
 </div>
@@ -565,23 +565,28 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
-<script id="v661825-settings-pc-diagnostic">
+
+<script id="v661826-hit-test">
 (function(){
-  function openSettingsDiagnostic(e){
-    var b=e.target && e.target.closest ? e.target.closest('#homeSettingsButton') : null;
-    if(!b) return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    alert('TEST 18.25 : le clic Paramètres est bien reçu.');
-    ['portalHome','portalPilotage','portalLibrary','portalAnnuaire'].forEach(function(id){
-      var x=document.getElementById(id); if(x){x.hidden=true;x.style.display='none';}
-    });
-    var st=document.getElementById('portalSettings');
-    if(st){st.hidden=false;st.style.display='block';}
-    if(window.portalSettingsLanding) window.portalSettingsLanding();
-    window.scrollTo(0,0);
+  function infoAt(x,y){
+    var els=document.elementsFromPoint(x,y).slice(0,8);
+    return els.map(function(el,i){
+      var id=el.id ? '#'+el.id : '';
+      var cls=el.className && typeof el.className==='string'
+        ? '.'+el.className.trim().replace(/\s+/g,'.') : '';
+      return (i+1)+'. '+el.tagName.toLowerCase()+id+cls;
+    }).join('\n');
   }
-  document.addEventListener('pointerdown',openSettingsDiagnostic,true);
+  document.addEventListener('pointerdown',function(e){
+    var b=document.getElementById('homeSettingsButton');
+    if(!b) return;
+    var r=b.getBoundingClientRect();
+    var pad=35;
+    if(e.clientX>=r.left-pad && e.clientX<=r.right+pad &&
+       e.clientY>=r.top-pad && e.clientY<=r.bottom+pad){
+      alert('TEST 18.26 — éléments sous le pointeur :\n\n'+infoAt(e.clientX,e.clientY));
+    }
+  },true);
 })();
 </script>
 </body></html>
