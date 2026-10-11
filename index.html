@@ -415,7 +415,7 @@ body.portal-library-readonly #themeDialog{display:none!important}
 <a href="https://admin.illiwap.com/fr/stations/69193" target="_blank" rel="noopener" class="welcome-settings-button" style="text-decoration:none;margin:0!important">📣 <span>Administration Illiwap</span></a>
 <a href="https://geo.vienne-condrieu-agglomeration.fr/adws/app/c8480c65-3997-11e8-bbe5-c7df9379fcac/index.html" target="_blank" rel="noopener" class="welcome-settings-button" style="text-decoration:none;margin:0!important">🗺️ <span>Cartothèque VCA</span></a>
 </div>
-<div class="welcome-version">V6.6.18.28</div>
+<div class="welcome-version">V6.6.18.29</div>
 </div>
 
 </div>
@@ -582,10 +582,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if(!box) return;
     box.hidden=true; box.style.display='none';
     try{
-      if(!window.supabaseClient) return;
-      var u=(await window.supabaseClient.auth.getUser()).data.user;
+      if(!window.portalCloudClient) return;
+      var u=(await window.portalCloudClient.auth.getUser()).data.user;
       if(!u) return;
-      var q=await window.supabaseClient.from('portal_user_permissions')
+      var q=await window.portalCloudClient.from('portal_user_permissions')
         .select('enabled,is_super_admin').eq('user_id',u.id).maybeSingle();
       var ok=!!(q.data && q.data.enabled===true && q.data.is_super_admin===true);
       box.hidden=!ok; box.style.display=ok?'flex':'none';
