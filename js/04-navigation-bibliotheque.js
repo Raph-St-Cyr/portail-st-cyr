@@ -9,7 +9,12 @@ el('settingsAddTheme').onclick=()=>{let input=el('settingsNewTheme'),t=input.val
 el('settingsNewTheme').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();el('settingsAddTheme').click()}});
 el('settingsThemeRows').onclick=e=>{let r=e.target.closest('[data-settings-theme-rename]'),d=e.target.closest('[data-settings-theme-delete]');if(r)settingsThemeRename(Number(r.dataset.settingsThemeRename));else if(d)settingsThemeDelete(Number(d.dataset.settingsThemeDelete))};
 settingsThemeRows();
-el('portalToday').textContent=new Intl.DateTimeFormat('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date());showModule('home');
+function refreshPortalToday(){
+  const d=el('portalToday');
+  if(d)d.textContent=new Intl.DateTimeFormat('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date());
+}
+refreshPortalToday();
+showModule('home');
 
 const DBNAME='saintcyr.portal.documents',STORE='documents',THEMEKEY='saintcyr.portal.documentThemes.v1';
 const defaultThemes=['Délibérations et arrêtés','Commissions et comptes rendus','Travaux et projets','Finances et devis','École et périscolaire','Communication','Urbanisme','Manifestations et cérémonies','Modèles et documents types','Autres documents'];
