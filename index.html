@@ -407,7 +407,7 @@ body.portal-library-readonly #themeDialog{display:none!important}
 <div id="supabaseConnectionIndicator" class="supabase-connection-indicator" aria-live="polite"><span class="supabase-dot"></span><span class="supabase-label">Supabase : vérification…</span></div>
 <div id="homeAccount" class="welcome-account" aria-live="polite"><strong id="homeAccountName">Utilisateur connecté</strong><small id="homeAccountEmail"></small></div>
 <button type="button" id="homeLogoutButton" class="welcome-logout-button" aria-label="Se déconnecter" title="Se déconnecter">↪ Se déconnecter</button>
-<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.6.18.24</div>
+<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.6.18.25</div>
 </div>
 
 </div>
@@ -563,5 +563,25 @@ document.addEventListener('DOMContentLoaded', function () {
     }, true);
   }
 });
+</script>
+
+<script id="v661825-settings-pc-diagnostic">
+(function(){
+  function openSettingsDiagnostic(e){
+    var b=e.target && e.target.closest ? e.target.closest('#homeSettingsButton') : null;
+    if(!b) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    alert('TEST 18.25 : le clic Paramètres est bien reçu.');
+    ['portalHome','portalPilotage','portalLibrary','portalAnnuaire'].forEach(function(id){
+      var x=document.getElementById(id); if(x){x.hidden=true;x.style.display='none';}
+    });
+    var st=document.getElementById('portalSettings');
+    if(st){st.hidden=false;st.style.display='block';}
+    if(window.portalSettingsLanding) window.portalSettingsLanding();
+    window.scrollTo(0,0);
+  }
+  document.addEventListener('pointerdown',openSettingsDiagnostic,true);
+})();
 </script>
 </body></html>
