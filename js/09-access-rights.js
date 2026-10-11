@@ -12,6 +12,7 @@ function updateHomeAccount(){
 async function loadMe(){const c=cl();if(!c)return null;const {data:{user}}=await c.auth.getUser();currentUser=user||null;if(!user){me=null;apply();return null}const {data,error}=await c.from('portal_user_permissions').select('*').eq('user_id',user.id).maybeSingle();if(error)console.warn(error);me=data||null;apply();return me}
 function apply(){
  updateHomeAccount();
+ window.portalIsSuperAdmin=!!(me?.enabled&&me?.is_super_admin===true);
  const logged=!!me?.enabled;
  document.querySelectorAll('[data-super-admin-only]').forEach(x=>x.hidden=!(logged&&me?.is_super_admin===true));
  document.body.classList.toggle('portal-actions-readonly',logged&&can('actions')==='read');
