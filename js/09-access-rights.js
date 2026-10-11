@@ -16,7 +16,22 @@ function apply(){
  document.querySelectorAll('[data-super-admin-only]').forEach(x=>x.hidden=!(logged&&me?.is_super_admin===true));
  document.body.classList.toggle('portal-actions-readonly',logged&&can('actions')==='read');
  document.body.classList.toggle('portal-library-readonly',logged&&can('bibliotheque')==='read'); const gate=$('accessGate');if(gate){gate.hidden=!!currentUser;gate.style.display=currentUser?'none':'flex'}
- document.querySelectorAll('#portalHome [data-module]').forEach(b=>{const m=b.dataset.module;let ok=m==='annuaire'?can('annuaire'):m==='settings'?can('parametres'):m==='pilotage'?(can('actions')||can('reunions')):m==='library'?can('bibliotheque'):true;b.hidden=currentUser?!ok:false});
+ document.querySelectorAll('#portalHome [data-module]').forEach(b=>{const m=b.dataset.module;let ok=m==='annuaire'?can('annuaire'):m==='settings'?(me?.is_super_admin===true):m==='pilotage'?(can('actions')||can('reunions')):m==='library'?can('bibliotheque'):true;b.hidden=currentUser?!ok:false});
+ const settingsHome=$('homeSettingsButton');
+ if(settingsHome){
+   settingsHome.hidden=!(logged&&me?.is_super_admin===true);
+   settingsHome.onclick=(e)=>{
+     e.preventDefault();e.stopPropagation();
+     if(me?.is_super_admin!==true)return;
+     if(typeof window.portalShowModule==='function')window.portalShowModule('settings');
+     else{
+       ['portalHome','portalPilotage','portalLibrary','portalAnnuaire'].forEach(id=>{const x=$(id);if(x)x.hidden=true});
+       const st=$('portalSettings');if(st)st.hidden=false;
+       if(window.portalSettingsLanding)window.portalSettingsLanding();
+       window.scrollTo(0,0);
+     }
+   };
+ }
  const write=can('annuaire','edit'); if($('newContact'))$('newContact').hidden=!write;
  if($('contactDialog'))$('contactDialog').classList.toggle('portal-readonly',!write);
  const accessBtn=document.querySelector('[data-settings-category="acces"]');if(accessBtn)accessBtn.hidden=!can('parametres','admin');
