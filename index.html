@@ -374,17 +374,21 @@ body.portal-library-readonly #themeDialog{display:none!important}
 </style>
 <style id="v661815-access-compact">
 .access-user-card{border:1px solid #d9dee3;border-radius:10px;margin:8px 0;background:#fff;overflow:hidden}.access-user-card summary{list-style:none;display:flex;align-items:center;gap:9px;padding:11px 12px;cursor:pointer}.access-user-card summary::-webkit-details-marker{display:none}.access-user-card summary small{display:block;color:#66717b;margin-top:2px}.access-chevron{font-size:22px;line-height:1;transition:transform .15s}.access-user-card[open] .access-chevron{transform:rotate(90deg)}.access-user-card summary .pill{margin-left:auto}.access-user-details{padding:0 12px 12px}.access-rights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}.access-rights-grid label{display:flex;flex-direction:column;gap:4px}.access-account-actions{display:flex;justify-content:flex-end;margin-top:12px}
-</style><style id="v661824-settings-desktop-hit-fix">
-#homeSettingsButton{position:relative!important;z-index:1001!important;pointer-events:auto!important}
-@media (min-width:701px){
-  .welcome-status-stack{z-index:1000!important;pointer-events:none!important}
-  .welcome-status-stack #homeSettingsButton,
-  .welcome-status-stack #homeLogoutButton,
-  .welcome-status-stack #homeAccount,
-  .welcome-status-stack #supabaseConnectionIndicator,
-  .welcome-status-stack .welcome-date{pointer-events:auto!important}
-}
-</style></head><body class="auth-locked"><section id="authGate" aria-label="Connexion au portail municipal">
+</style>
+<style id="v661827-home-hit-layers-fix">
+/* Les calques de légende/zone basse de l'accueil ne doivent pas intercepter
+   les clics destinés à la pile d'état (Paramètres / Déconnexion). */
+.welcome-caption,
+.welcome-bottom{pointer-events:none!important}
+
+/* Les véritables éléments interactifs contenus dans ces zones restent cliquables. */
+.welcome-caption a,.welcome-caption button,
+.welcome-bottom a,.welcome-bottom button{pointer-events:auto!important}
+
+.welcome-status-stack{position:absolute;z-index:20!important;pointer-events:auto!important}
+#homeSettingsButton,#homeLogoutButton{pointer-events:auto!important}
+</style>
+</head><body class="auth-locked"><section id="authGate" aria-label="Connexion au portail municipal">
 <div class="auth-card">
 <div class="auth-lock-mark" aria-hidden="true">🔒</div>
 <h1>Portail municipal</h1>
@@ -407,7 +411,7 @@ body.portal-library-readonly #themeDialog{display:none!important}
 <div id="supabaseConnectionIndicator" class="supabase-connection-indicator" aria-live="polite"><span class="supabase-dot"></span><span class="supabase-label">Supabase : vérification…</span></div>
 <div id="homeAccount" class="welcome-account" aria-live="polite"><strong id="homeAccountName">Utilisateur connecté</strong><small id="homeAccountEmail"></small></div>
 <button type="button" id="homeLogoutButton" class="welcome-logout-button" aria-label="Se déconnecter" title="Se déconnecter">↪ Se déconnecter</button>
-<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.6.18.26</div>
+<button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button><div class="welcome-version">V6.6.18.27</div>
 </div>
 
 </div>
@@ -566,27 +570,4 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 
-<script id="v661826-hit-test">
-(function(){
-  function infoAt(x,y){
-    var els=document.elementsFromPoint(x,y).slice(0,8);
-    return els.map(function(el,i){
-      var id=el.id ? '#'+el.id : '';
-      var cls=el.className && typeof el.className==='string'
-        ? '.'+el.className.trim().replace(/\s+/g,'.') : '';
-      return (i+1)+'. '+el.tagName.toLowerCase()+id+cls;
-    }).join('\n');
-  }
-  document.addEventListener('pointerdown',function(e){
-    var b=document.getElementById('homeSettingsButton');
-    if(!b) return;
-    var r=b.getBoundingClientRect();
-    var pad=35;
-    if(e.clientX>=r.left-pad && e.clientX<=r.right+pad &&
-       e.clientY>=r.top-pad && e.clientY<=r.bottom+pad){
-      alert('TEST 18.26 — éléments sous le pointeur :\n\n'+infoAt(e.clientX,e.clientY));
-    }
-  },true);
-})();
-</script>
 </body></html>
