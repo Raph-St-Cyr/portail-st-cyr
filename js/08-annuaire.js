@@ -34,6 +34,21 @@ function renderCats(){
   return `<div class="annuaire-cat-row"><input data-ci="${i}" value="${esc(c)}"><div class="annuaire-cat-actions"><button type="button" data-cm="${i}" data-dir="-1" ${i===0?'disabled':''}>↑</button><button type="button" data-cm="${i}" data-dir="1" ${i===cats.length-1?'disabled':''}>↓</button><button type="button" data-cr="${i}">Renommer</button><button type="button" class="danger" data-cd="${i}">Supprimer</button></div></div><div class="annuaire-subcats"><strong>Sous-catégories</strong>${rows||'<p class="muted">Aucune sous-catégorie.</p>'}<div class="annuaire-subcat-add"><input data-new-sub="${i}" maxlength="80" placeholder="Nouvelle sous-catégorie"><button type="button" data-sa="${i}">+ Ajouter</button></div></div>`;
  }).join('');
 }
+function callControl(c){
+ const phone=(c.phone||'').trim(),mobile=(c.mobile||'').trim(),nums=[['Fixe',phone],['Portable',mobile]].filter(x=>x[1]);
+ if(!nums.length)return '';
+ if(nums.length===1)return `<a href="tel:${esc(nums[0][1].replace(/\s/g,''))}" aria-label="Appeler ${esc(nums[0][0])}" title="Appeler"><span aria-hidden="true">☎</span></a>`;
+ return `<button type="button" data-call-choice="${esc(c.id)}" aria-label="Choisir le numéro à appeler" title="Appeler"><span aria-hidden="true">☎</span></button>`;
+}
+function openCallChoice(c){
+ if(!c)return;
+ const choices=[['☎️ Fixe',(c.phone||'').trim()],['📱 Portable',(c.mobile||'').trim()]].filter(x=>x[1]);
+ if(choices.length===1){location.href='tel:'+choices[0][1].replace(/\s/g,'');return}
+ let dlg=$('annuaireCallChoiceDialog');
+ if(!dlg){dlg=document.createElement('dialog');dlg.id='annuaireCallChoiceDialog';dlg.innerHTML='<form method="dialog"><h3>Quel numéro appeler ?</h3><div id="annuaireCallChoices" style="display:grid;gap:10px;margin:14px 0"></div><button type="submit" class="secondary">Annuler</button></form>';document.body.appendChild(dlg)}
+ $('annuaireCallChoices').innerHTML=choices.map(x=>`<a href="tel:${esc(x[1].replace(/\s/g,''))}" style="display:block;padding:12px;border:1px solid #cad4cf;border-radius:9px;text-decoration:none"><strong>${esc(x[0])}</strong><br><span>${esc(x[1])}</span></a>`).join('');
+ dlg.showModal();
+}
 function render(){
  renderCats();
  const canWrite=!window.portalCan||window.portalCan('annuaire','edit');
@@ -43,9 +58,9 @@ function render(){
  $('contactCards').className=displayMode==='list'?'annuaire-grid annuaire-list':'annuaire-grid annuaire-cards';
  $('annuaireListMode')?.classList.toggle('active',displayMode==='list');$('annuaireCardMode')?.classList.toggle('active',displayMode==='cards');
  $('contactCards').innerHTML=a.length?a.map(c=>{let n=[c.lastName,c.firstName].filter(Boolean).join(' '),t=c.mobile||c.phone||'';
-  if(displayMode==='list')return `<article class="contact-card contact-row"><button type="button" class="contact-name" data-contact-edit="${c.id}"><span>${esc(n||c.organization||'Contact')}</span>${n&&c.organization?`<small>${esc(c.organization)}</small>`:''}</button><div class="contact-quick">${t?`<a href="tel:${esc(t.replace(/\s/g,''))}" aria-label="Appeler" title="Appeler"><span aria-hidden="true">☎</span></a>`:''}${c.email?`<a href="mailto:${esc(c.email)}" aria-label="Envoyer un e-mail" title="E-mail"><span aria-hidden="true">✉</span></a>`:''}</div></article>`;
+  if(displayMode==='list')return `<article class="contact-card contact-row"><button type="button" class="contact-name" data-contact-edit="${c.id}"><span>${esc(n||c.organization||'Contact')}</span>${n&&c.organization?`<small>${esc(c.organization)}</small>`:''}</button><div class="contact-quick">${callControl(c)}${c.email?`<a href="mailto:${esc(c.email)}" aria-label="Envoyer un e-mail" title="E-mail"><span aria-hidden="true">✉</span></a>`:''}</div></article>`;
   let ad=[c.address,[c.postalCode,c.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
-  return `<article class="contact-card"><h3>${esc(n||c.organization||'Contact')}</h3><div class="contact-meta">${esc([c.category,c.subcategory,c.organization,c.function].filter(Boolean).join(' · '))}</div><div class="contact-lines">${c.phone?`<div>☎ ${esc(c.phone)}</div>`:''}${c.mobile?`<div>📱 ${esc(c.mobile)}</div>`:''}${c.email?`<div>✉ ${esc(c.email)}</div>`:''}${ad?`<div>📍 ${esc(ad)}</div>`:''}</div><div class="contact-actions">${t?`<a href="tel:${esc(t.replace(/\s/g,''))}" aria-label="Appeler" title="Appeler"><span aria-hidden="true">☎</span></a>`:''}${c.email?`<a href="mailto:${esc(c.email)}" aria-label="Envoyer un e-mail" title="E-mail"><span aria-hidden="true">✉</span></a>`:''}${canWrite?`<button type="button" data-contact-edit="${c.id}">Modifier</button>`:''}</div></article>`}).join(''):'<p class="muted">Aucun contact.</p>';
+  return `<article class="contact-card"><h3>${esc(n||c.organization||'Contact')}</h3><div class="contact-meta">${esc([c.category,c.subcategory,c.organization,c.function].filter(Boolean).join(' · '))}</div><div class="contact-lines">${c.phone?`<div>☎ ${esc(c.phone)}</div>`:''}${c.mobile?`<div>📱 ${esc(c.mobile)}</div>`:''}${c.email?`<div>✉ ${esc(c.email)}</div>`:''}${ad?`<div>📍 ${esc(ad)}</div>`:''}</div><div class="contact-actions">${callControl(c)}${c.email?`<a href="mailto:${esc(c.email)}" aria-label="Envoyer un e-mail" title="E-mail"><span aria-hidden="true">✉</span></a>`:''}${canWrite?`<button type="button" data-contact-edit="${c.id}">Modifier</button>`:''}</div></article>`}).join(''):'<p class="muted">Aucun contact.</p>';
 }
 function open(c={}){
  const canWrite=!window.portalCan||window.portalCan('annuaire','edit');
@@ -90,7 +105,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  $('contactSearch').oninput=render;$('contactCategoryFilter').onchange=()=>{updateSubFilter();render()};$('contactSubcategoryFilter').onchange=render;
  $('contactCategory').onchange=()=>{$('contactSubcategory').innerHTML=subOptions($('contactCategory').value)};
  $('annuaireListMode').onclick=()=>{displayMode='list';localStorage.setItem('saintcyr.annuaire.display.v1',displayMode);render()};$('annuaireCardMode').onclick=()=>{displayMode='cards';localStorage.setItem('saintcyr.annuaire.display.v1',displayMode);render()};
- $('contactCards').onclick=e=>{let b=e.target.closest('[data-contact-edit]');if(b)open(contacts.find(c=>c.id===b.dataset.contactEdit)||{})};
+ $('contactCards').onclick=e=>{let call=e.target.closest('[data-call-choice]');if(call){e.preventDefault();openCallChoice(contacts.find(c=>c.id===call.dataset.callChoice));return}let b=e.target.closest('[data-contact-edit]');if(b)open(contacts.find(c=>c.id===b.dataset.contactEdit)||{})};
  $('contactForm').onsubmit=e=>{e.preventDefault();if(window.portalCan&&!window.portalCan('annuaire','edit'))return;let id=$('contactId').value||crypto.randomUUID(),old=contacts.find(c=>c.id===id)||{},c={...old,id,lastName:$('contactLastName').value.trim(),firstName:$('contactFirstName').value.trim(),category:$('contactCategory').value,subcategory:$('contactSubcategory').value,organization:$('contactOrganization').value.trim(),function:$('contactFunction').value.trim(),phone:$('contactPhone').value.trim(),mobile:$('contactMobile').value.trim(),email:$('contactEmail').value.trim(),address:$('contactAddress').value.trim(),postalCode:$('contactPostalCode').value.trim(),city:$('contactCity').value.trim(),notes:$('contactNotes').value.trim(),updatedAt:new Date().toISOString()};let i=contacts.findIndex(x=>x.id===id);i<0?contacts.push(c):contacts[i]=c;let p=set(PK);p.add(id);put(PK,p);save();$('contactDialog').close();render();up(c).catch(console.warn)};
  $('deleteContact').onclick=()=>{if(window.portalCan&&!window.portalCan('annuaire','edit'))return;let id=$('contactId').value;if(!id||!confirm('Supprimer ce contact ?'))return;contacts=contacts.filter(c=>c.id!==id);let d=set(DK);d.add(id);put(DK,d);let p=set(PK);p.delete(id);put(PK,p);save();$('contactDialog').close();render();del(id).catch(e=>console.warn('Suppression contact',e))};
  $('contactCategoryToggle').onclick=()=>{let b=$('contactCategoryBody'),v=b.style.display==='none';b.style.display=v?'block':'none';$('contactCategoryToggle').textContent=v?'Masquer':'Afficher'};
