@@ -11,7 +11,7 @@ async function run(){
   const tables={};for(const table of TABLES){const {data,error}=await cl.from(table).select('*');if(error)throw Error(table+' : '+error.message);tables[table]=data||[]}
   const now=new Date(),pad=n=>String(n).padStart(2,'0');
   dl(`sauvegarde_portail_${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}.json`,
-     {format:'portail-st-cyr-backup',format_version:1,portal_version:'V6.8.1.5',exported_at:now.toISOString(),tables});
+     {format:'portail-st-cyr-backup',format_version:1,portal_version:'V6.8.1.6',exported_at:now.toISOString(),tables});
   if(s)s.textContent='Sauvegarde complète téléchargée.';
  }catch(e){console.error('[Sauvegarde complète]',e);if(s)s.textContent='Échec : '+e.message;alert('Sauvegarde impossible : '+e.message)}
  finally{b.disabled=false}
@@ -34,13 +34,33 @@ function showPreview(obj){
   '<button type="button" class="danger" id="fullCloudRestoreConfirm">Restaurer cette sauvegarde</button>';
  const c=$('fullCloudRestoreConfirm');if(c)c.onclick=()=>restoreBackup(obj);
 }
+
+async function snapshotCurrentState(cl){
+ const tables={};
+ for(const table of TABLES){
+  const {data,error}=await cl.from(table).select('*');
+  if(error)throw Error('Sauvegarde de sécurité — '+table+' : '+error.message);
+  tables[table]=data||[];
+ }
+ return {format:'portail-st-cyr-backup',format_version:1,portal_version:'V6.8.1.6',exported_at:new Date().toISOString(),reason:'pre-restore-safety-copy',tables};
+}
+function downloadSafetyCopy(obj){
+ const now=new Date(),pad=n=>String(n).padStart(2,'0');
+ dl(`SECURITE_AVANT_RESTAURATION_${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}.json`,obj);
+}
+
 async function restoreBackup(obj){
  if(!confirm('ATTENTION\\n\\nCette opération va remplacer les données actuelles des modules par celles de la sauvegarde sélectionnée.\\n\\nLes comptes utilisateurs et leurs droits ne seront pas modifiés.\\n\\nContinuer ?'))return;
  const phrase=prompt('Pour confirmer la restauration, saisissez exactement : RESTAURER');
  if(phrase!=='RESTAURER'){alert('Restauration annulée.');return}
  const cl=window.portalCloudClient;if(!cl)throw Error('Connexion Supabase indisponible.');
  const {data:{session}}=await cl.auth.getSession();if(!session)throw Error('Session Supabase absente.');
- const s=$('fullCloudRestoreStatus');if(s)s.textContent='Restauration en cours…';
+ const s=$('fullCloudRestoreStatus');
+ if(s)s.textContent='Création de la sauvegarde de sécurité avant restauration…';
+ const safety=await snapshotCurrentState(cl);
+ downloadSafetyCopy(safety);
+ if(s)s.textContent='Sauvegarde de sécurité téléchargée. Restauration en cours…';
+ // Aucune suppression n'est exécutée avant la création complète de cette copie de sécurité.
  // Suppression dans l'ordre des dépendances, puis réinsertion dans l'ordre inverse.
  const del=['action_subtasks','portal_agenda_events','portal_room_events','actions','dossiers','portal_meetings','portal_resources','annuaire_contacts','portal_agenda_calendars','portal_room_calendars','portal_settings'];
  const ins=['portal_settings','dossiers','actions','action_subtasks','portal_meetings','portal_resources','annuaire_contacts','portal_agenda_calendars','portal_agenda_events','portal_room_calendars','portal_room_events'];
