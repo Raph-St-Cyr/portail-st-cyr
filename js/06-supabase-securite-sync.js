@@ -303,8 +303,10 @@ setInterval(()=>cloudAutoSync(),10000);
 let cloudRealtimeChannel=null;
 let cloudLibraryRealtimeChannel=null;
 let cloudAnnuaireRealtimeChannel=null;
+let cloudAgendaRealtimeChannel=null;
 let cloudRealtimeTimer=null;
 let cloudLibraryRealtimeTimer=null;
+let cloudAgendaRealtimeTimer=null;
 function cloudRealtimeRefresh(){
  clearTimeout(cloudRealtimeTimer);
  cloudRealtimeTimer=setTimeout(()=>cloudAutoSync(),250);
@@ -319,6 +321,14 @@ function cloudLibraryRealtimeRefresh(payload){
  console.info('[Supabase Realtime Bibliothèque événement]',payload);
  clearTimeout(cloudLibraryRealtimeTimer);
  cloudLibraryRealtimeTimer=setTimeout(()=>{if(typeof window.portalRefreshLibrary==='function')window.portalRefreshLibrary()},250);
+}
+function cloudAgendaRealtimeRefresh(){
+ clearTimeout(cloudAgendaRealtimeTimer);
+ cloudAgendaRealtimeTimer=setTimeout(()=>{
+  const agendaOpen=document.getElementById('portalAgenda')?.hidden===false;
+  const settingsAgendaOpen=document.getElementById('settingsAgendaPanel')?.hidden===false;
+  if((agendaOpen||settingsAgendaOpen)&&typeof window.portalAgendaReload==='function')window.portalAgendaReload();
+ },250);
 }
 function cloudStartRealtime(){
  if(!cloudRealtimeChannel){
@@ -337,6 +347,12 @@ function cloudStartRealtime(){
     console.info('[Supabase Realtime Bibliothèque]',status);
    });
  }
+ if(!cloudAgendaRealtimeChannel){
+  cloudAgendaRealtimeChannel=cloudClient.channel('portail-agenda-live')
+   .on('postgres_changes',{event:'*',schema:'public',table:'portal_agenda_events'},cloudAgendaRealtimeRefresh)
+   .on('postgres_changes',{event:'*',schema:'public',table:'portal_agenda_calendars'},cloudAgendaRealtimeRefresh)
+   .subscribe();
+ }
  if(!cloudAnnuaireRealtimeChannel){
   cloudAnnuaireRealtimeChannel=cloudClient.channel('portail-annuaire-live')
    .on('postgres_changes',{event:'*',schema:'public',table:'annuaire_contacts'},()=>{
@@ -352,8 +368,8 @@ function cloudStartRealtime(){
  }
 }
 async function cloudStopRealtime(){
- const channels=[cloudRealtimeChannel,cloudLibraryRealtimeChannel,cloudAnnuaireRealtimeChannel].filter(Boolean);
- cloudRealtimeChannel=null;cloudLibraryRealtimeChannel=null;cloudAnnuaireRealtimeChannel=null;
+ const channels=[cloudRealtimeChannel,cloudLibraryRealtimeChannel,cloudAnnuaireRealtimeChannel,cloudAgendaRealtimeChannel].filter(Boolean);
+ cloudRealtimeChannel=null;cloudLibraryRealtimeChannel=null;cloudAnnuaireRealtimeChannel=null;cloudAgendaRealtimeChannel=null;
  for(const ch of channels){try{await cloudClient.removeChannel(ch)}catch(e){console.warn('[Supabase Realtime]',e)}}
 }
 cloudClient.auth.onAuthStateChange((_event,session)=>{if(session)cloudStartRealtime();else cloudStopRealtime()});
