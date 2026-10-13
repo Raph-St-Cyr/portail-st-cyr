@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id), client=()=>window.portalCloudClient;
-let view=localStorage.getItem('saintcyr.rooms.view')||'month', cursor=new Date(), calendars=[],events=[],filters=new Set();
+let view=localStorage.getItem('saintcyr.rooms.view')||'month', cursor=new Date(), calendars=[],events=[],filters=new Set();if(view==='day'||!['week','month'].includes(view))view='week';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0'), ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const parseDate=s=>{const [y,m,d]=String(s).split('-').map(Number);return new Date(y,m-1,d)};
