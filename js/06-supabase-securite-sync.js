@@ -304,9 +304,11 @@ let cloudRealtimeChannel=null;
 let cloudLibraryRealtimeChannel=null;
 let cloudAnnuaireRealtimeChannel=null;
 let cloudAgendaRealtimeChannel=null;
+let cloudRoomsRealtimeChannel=null;
 let cloudRealtimeTimer=null;
 let cloudLibraryRealtimeTimer=null;
 let cloudAgendaRealtimeTimer=null;
+let cloudRoomsRealtimeTimer=null;
 function cloudRealtimeRefresh(){
  clearTimeout(cloudRealtimeTimer);
  cloudRealtimeTimer=setTimeout(()=>cloudAutoSync(),250);
@@ -328,6 +330,14 @@ function cloudAgendaRealtimeRefresh(){
   const agendaOpen=document.getElementById('portalAgenda')?.hidden===false;
   const settingsAgendaOpen=document.getElementById('settingsAgendaPanel')?.hidden===false;
   if((agendaOpen||settingsAgendaOpen)&&typeof window.portalAgendaReload==='function')window.portalAgendaReload();
+ },250);
+}
+function cloudRoomsRealtimeRefresh(){
+ clearTimeout(cloudRoomsRealtimeTimer);
+ cloudRoomsRealtimeTimer=setTimeout(()=>{
+  const roomsOpen=document.getElementById('portalRooms')?.hidden===false;
+  const settingsRoomsOpen=document.getElementById('settingsRoomsPanel')?.hidden===false;
+  if((roomsOpen||settingsRoomsOpen)&&typeof window.portalRoomsReload==='function')window.portalRoomsReload();
  },250);
 }
 function cloudStartRealtime(){
@@ -353,6 +363,12 @@ function cloudStartRealtime(){
    .on('postgres_changes',{event:'*',schema:'public',table:'portal_agenda_calendars'},cloudAgendaRealtimeRefresh)
    .subscribe();
  }
+ if(!cloudRoomsRealtimeChannel){
+  cloudRoomsRealtimeChannel=cloudClient.channel('portail-rooms-live')
+   .on('postgres_changes',{event:'*',schema:'public',table:'portal_room_events'},cloudRoomsRealtimeRefresh)
+   .on('postgres_changes',{event:'*',schema:'public',table:'portal_room_calendars'},cloudRoomsRealtimeRefresh)
+   .subscribe();
+ }
  if(!cloudAnnuaireRealtimeChannel){
   cloudAnnuaireRealtimeChannel=cloudClient.channel('portail-annuaire-live')
    .on('postgres_changes',{event:'*',schema:'public',table:'annuaire_contacts'},()=>{
@@ -368,8 +384,8 @@ function cloudStartRealtime(){
  }
 }
 async function cloudStopRealtime(){
- const channels=[cloudRealtimeChannel,cloudLibraryRealtimeChannel,cloudAnnuaireRealtimeChannel,cloudAgendaRealtimeChannel].filter(Boolean);
- cloudRealtimeChannel=null;cloudLibraryRealtimeChannel=null;cloudAnnuaireRealtimeChannel=null;cloudAgendaRealtimeChannel=null;
+ const channels=[cloudRealtimeChannel,cloudLibraryRealtimeChannel,cloudAnnuaireRealtimeChannel,cloudAgendaRealtimeChannel,cloudRoomsRealtimeChannel].filter(Boolean);
+ cloudRealtimeChannel=null;cloudLibraryRealtimeChannel=null;cloudAnnuaireRealtimeChannel=null;cloudAgendaRealtimeChannel=null;cloudRoomsRealtimeChannel=null;
  for(const ch of channels){try{await cloudClient.removeChannel(ch)}catch(e){console.warn('[Supabase Realtime]',e)}}
 }
 cloudClient.auth.onAuthStateChange((_event,session)=>{if(session)cloudStartRealtime();else cloudStopRealtime()});
