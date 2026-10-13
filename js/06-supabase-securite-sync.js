@@ -189,9 +189,20 @@ function cloudApplySettingsPayload(payload){
  if(Array.isArray(payload.documentThemes)&&payload.documentThemes.length&&typeof window.portalApplyLibraryThemes==='function')window.portalApplyLibraryThemes(payload.documentThemes);
 }
 async function cloudPushSettings(){
- const {data:{session}}=await cloudClient.auth.getSession();if(!session)return;
- const row={id:PORTAL_SETTINGS_ID,payload:cloudSettingsPayload(),updated_at:new Date().toISOString()};
- const {error}=await cloudClient.from('portal_settings').upsert(row,{onConflict:'id'});if(error)throw error;
+ if(!cloudClient||!cloudReady||cloudApplying)return;
+ try{
+  const {data:existing,error:readError}=await cloudClient.from('portal_settings').select('payload').eq('id','municipal_config').maybeSingle();
+  if(readError)throw readError;
+  const current=(existing&&existing.payload&&typeof existing.payload==='object')?existing.payload:{};
+  const payload={
+   ...current,
+   commissions:Array.isArray(db.commissions)?db.commissions:[],
+   settings:db.settings||{},
+   documentThemes:Array.isArray(db.documentThemes)?db.documentThemes:[]
+  };
+  const {error}=await cloudClient.from('portal_settings').upsert({id:'municipal_config',payload,updated_at:new Date().toISOString()},{onConflict:'id'});
+  if(error)throw error;
+ }catch(err){console.error('[Cloud] settings push',err)}
 }
 async function cloudSyncSettings(){
  const {data:{session}}=await cloudClient.auth.getSession();if(!session)return;
