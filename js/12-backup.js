@@ -11,7 +11,7 @@ async function run(){
   const tables={};for(const table of TABLES){const {data,error}=await cl.from(table).select('*');if(error)throw Error(table+' : '+error.message);tables[table]=data||[]}
   const now=new Date(),pad=n=>String(n).padStart(2,'0');
   dl(`sauvegarde_portail_${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}.json`,
-     {format:'portail-st-cyr-backup',format_version:1,portal_version:'V6.8.1.4',exported_at:now.toISOString(),tables});
+     {format:'portail-st-cyr-backup',format_version:1,portal_version:'V6.8.1.5',exported_at:now.toISOString(),tables});
   if(s)s.textContent='Sauvegarde complète téléchargée.';
  }catch(e){console.error('[Sauvegarde complète]',e);if(s)s.textContent='Échec : '+e.message;alert('Sauvegarde impossible : '+e.message)}
  finally{b.disabled=false}
