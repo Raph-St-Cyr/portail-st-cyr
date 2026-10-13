@@ -122,4 +122,8 @@ document.addEventListener('DOMContentLoaded',()=>{
  pull();setInterval(pull,20000);window.addEventListener('focus',pull);document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 });
 window.portalAnnuaireCloudDelete=del;window.portalAnnuairePendingDeletes=()=>[...set(DK)];window.portalAnnuaireCloudSync=pull;window.portalRenderAnnuaire=render;
+window.portalAnnuairePushLocalRefs=async function(){
+ await saveRefs();
+ return {categories:[...cats],subcategories:JSON.parse(JSON.stringify(subs))};
+};
 })();
