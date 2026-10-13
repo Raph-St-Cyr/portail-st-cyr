@@ -18,6 +18,12 @@
 .agenda-event-time{font-size:.78em;font-weight:600;line-height:1.15}
 .agenda-event-title{font-weight:700;line-height:1.2;margin-top:2px}
 .agenda-event-location{font-size:.78em;line-height:1.15;margin-top:3px;opacity:.82}
+
+@media (max-width:700px){
+  .agenda-mobile-months{display:flex;flex-direction:column;gap:22px}
+  .agenda-mobile-month{scroll-margin-top:12px}
+  .agenda-mobile-month-title{margin:0 0 8px;font-size:1.05rem;text-transform:capitalize}
+}
 </style><style>
 :root{--wine:#792e43}nav{flex-wrap:wrap}.v2cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}.v2card{background:white;border:1px solid #dce1e5;border-radius:12px;padding:17px;margin-bottom:12px;box-shadow:0 3px 12px #182b3210}.v2card h3{margin:0 0 8px}.v2meta{color:#63717b;font-size:13px;margin:8px 0}.v2progress{height:8px;background:#e6ebee;border-radius:12px;overflow:hidden}.v2progress span{display:block;height:100%;background:#548a72}.v2line{display:flex;gap:10px;align-items:center;justify-content:space-between;margin:8px 0}.v2line label{flex:1}.v2card button{margin-top:8px}.v2late{border-left:5px solid #ba4040}.v2soon{border-left:5px solid #d5a032}dialog{max-height:90vh;overflow:auto}#subtaskRows{max-height:230px;overflow:auto}.v2tiny{font-size:12px;color:#677}
 .classification{padding:14px;border:1px solid #d7dce0;border-radius:9px;background:#fafbfc;display:grid;gap:12px}.class-options{display:flex;flex-wrap:wrap;gap:15px}.class-options label{flex-direction:row;align-items:center;cursor:pointer;color:#25313c}.class-options input{width:auto}.classification strong{font-size:14px}.meeting-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin:10px 0}.meeting-choices label{display:flex;flex-direction:row;align-items:center;border:1px solid #ddd;border-radius:7px;padding:8px;gap:8px}.meeting-choices input{width:auto}.meeting-decision{border:1px solid #d7dce0;border-radius:8px;padding:12px;margin:10px 0;background:#fafbfc}.meeting-decision .fields{margin:8px 0}.meeting-decision input,.meeting-decision select{min-width:0}
@@ -428,7 +434,7 @@ body.portal-library-readonly #themeDialog{display:none!important}
 <div id="homeAccount" class="welcome-account" aria-live="polite"><strong id="homeAccountName">Utilisateur connecté</strong><small id="homeAccountEmail"></small></div>
 <button type="button" id="homeLogoutButton" class="welcome-logout-button" aria-label="Se déconnecter" title="Se déconnecter">↪ Se déconnecter</button>
 <button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button>
-<div class="welcome-version">V6.7.2.1</div>
+<div class="welcome-version">V6.7.2.2</div>
 </div>
 
 </div>
@@ -554,7 +560,7 @@ document.addEventListener('DOMContentLoaded',function(){
   });
 });
 </script><script src="js/08-annuaire.js?v=661818"></script>
-<script src="js/09-access-rights.js?v=661815test"></script><script src="js/10-agenda.js?v=6721"></script>
+<script src="js/09-access-rights.js?v=661815test"></script><script src="js/10-agenda.js?v=6722"></script>
 <script id="v643-annuaire-opening-fix">
 document.addEventListener('DOMContentLoaded', function () {
   var annuaireButton = document.querySelector('#portalHome [data-module="annuaire"]');
