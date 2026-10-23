@@ -453,7 +453,7 @@ body.portal-library-readonly #themeDialog{display:none!important}
 <div id="homeAccount" class="welcome-account" aria-live="polite"><strong id="homeAccountName">Utilisateur connecté</strong><small id="homeAccountEmail"></small></div>
 <button type="button" id="homeLogoutButton" class="welcome-logout-button" aria-label="Se déconnecter" title="Se déconnecter">↪ Se déconnecter</button>
 <button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button>
-<div class="welcome-version">V6.8.4.1</div>
+<div class="welcome-version">V6.8.4.2</div>
 </div>
 
 </div>
@@ -534,7 +534,7 @@ body.portal-library-readonly #themeDialog{display:none!important}
 <div class="section-title"><div><h2>Salles</h2><p class="muted">Créez les salles, choisissez leur couleur et activez celles qui doivent être proposées dans Gestion des salles.</p></div></div>
 <form id="roomsCalendarForm" class="rooms-calendar-form"><input type="hidden" id="roomsCalendarId"><label>Nom de la salle<input id="roomsCalendarName" maxlength="100" required></label><label>Couleur<select id="roomsCalendarColor"><option value="#2f80c9">Bleu</option><option value="#2f9b68">Vert</option><option value="#d4575d">Rouge</option><option value="#8a4ab0">Violet</option><option value="#d38b2d">Orange</option><option value="#397a84">Turquoise</option><option value="#7a6248">Brun</option><option value="#66717a">Gris</option></select></label><label class="rooms-active"><input id="roomsCalendarActive" type="checkbox" checked> Actif</label><button type="submit">Enregistrer</button><button type="button" class="secondary" id="roomsCalendarReset">Nouveau</button></form><div id="roomsCalendarRows"></div>
 </div>
-<div id="settingsInterventionsPanel" class="panel" hidden><div class="section-title"><div><h2>Catégories des interventions techniques</h2><p class="muted">Créez, renommez ou désactivez les catégories proposées lors d’un signalement.</p></div></div><div id="techCategoryRows"></div><div class="ref-add"><input id="techNewCategory" maxlength="80" placeholder="Ex. Signalisation"><button type="button" id="techAddCategory">+ Ajouter</button></div><p class="hint">Une catégorie désactivée reste affichée dans les demandes existantes mais n’est plus proposée pour les nouvelles demandes.</p></div>
+<div id="settingsInterventionsPanel" class="panel" hidden><div class="section-title"><div><h2>Catégories des interventions techniques</h2><p class="muted">Créez, renommez, désactivez ou supprimez les catégories proposées lors d’un signalement.</p></div></div><div id="techCategoryRows"></div><div class="ref-add"><input id="techNewCategory" maxlength="80" placeholder="Ex. Signalisation"><button type="button" id="techAddCategory">+ Ajouter</button></div><p class="hint">Une catégorie désactivée reste affichée dans les demandes existantes mais n’est plus proposée pour les nouvelles demandes.</p></div>
 <div id="settingsLibraryPanel" class="panel" hidden>
 <div class="ref-manager" id="libraryThemeManager">
 <div class="ref-manager-title"><h3>Thématiques de la bibliothèque <span class="muted" id="settingsThemeCount"></span></h3><button type="button" class="secondary ref-toggle" id="settingsThemeToggle">Afficher</button></div>
@@ -593,7 +593,7 @@ document.addEventListener('DOMContentLoaded',function(){
   });
 });
 </script><script src="js/08-annuaire.js?v=6804"></script>
-<script src="js/09-access-rights.js?v=680"></script><script src="js/10-agenda.js?v=6824"></script><script src="js/11-gestion-salles.js?v=6824"></script>
+<script src="js/09-access-rights.js?v=6842"></script><script src="js/10-agenda.js?v=6824"></script><script src="js/11-gestion-salles.js?v=6824"></script>
 <script id="v643-annuaire-opening-fix">
 document.addEventListener('DOMContentLoaded', function () {
   var annuaireButton = document.querySelector('#portalHome [data-module="annuaire"]');
@@ -682,5 +682,5 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 
 <script src="js/12-backup.js?v=6816"></script>
-<script src="js/13-interventions-techniques.js?v=6840"></script>
+<script src="js/13-interventions-techniques.js?v=6842"></script>
 </body></html>
