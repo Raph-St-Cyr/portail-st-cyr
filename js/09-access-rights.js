@@ -18,7 +18,8 @@ function apply(){
  document.querySelectorAll('#portalHome [data-module]').forEach(b=>{const m=b.dataset.module;let ok=m==='annuaire'?can('annuaire'):m==='settings'?can('parametres'):m==='pilotage'?(can('actions')||can('reunions')):m==='library'?can('bibliotheque'):m==='agenda'?can('agenda'):true;b.hidden=currentUser?!ok:false});
  const write=can('annuaire','edit'); if($('newContact'))$('newContact').hidden=!write;
  if($('contactDialog'))$('contactDialog').classList.toggle('portal-readonly',!write);
- const agendaBtn=$('homeAgendaButton');if(agendaBtn)agendaBtn.hidden=currentUser?!can('agenda'):false; const roomsBtn=$('homeRoomsButton');if(roomsBtn)roomsBtn.hidden=currentUser?!can('salles'):false; const accessBtn=document.querySelector('[data-settings-category="acces"]');if(accessBtn)accessBtn.hidden=!can('parametres','admin');
+ const agendaBtn=$('homeAgendaButton');if(agendaBtn)agendaBtn.hidden=currentUser?!can('agenda'):false; const roomsBtn=$('homeRoomsButton');if(roomsBtn)roomsBtn.hidden=currentUser?!can('salles'):false; const techBtn=$('homeInterventionsButton');if(techBtn)techBtn.hidden=currentUser?!(!!me?.enabled&&(me.is_super_admin||(me.interventions||'none')!=='none')):false; const accessBtn=document.querySelector('[data-settings-category="acces"]');if(accessBtn)accessBtn.hidden=!can('parametres','admin');
+ document.body.classList.remove('portal-access-pending');
 }
 window.portalApplyAccess=apply;
 async function listUsers(){const h=$('accessUsers');if(!can('parametres','admin')){if(h)h.innerHTML='<p class="muted">Droits administrateur requis.</p>';return}try{const c=cl();if(!c)throw new Error('Connexion Supabase indisponible');const {data,error}=await c.from('portal_user_permissions').select('*').order('email');if(error)throw error;users=data||[];renderUsers()}catch(e){console.error(e);if(h)h.innerHTML='<p class="muted">Chargement impossible : '+String(e.message||e).replace(/[<>&]/g,'')+'</p>'}}
