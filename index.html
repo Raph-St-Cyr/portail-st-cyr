@@ -36,6 +36,9 @@
   .rooms-mobile-month-title{margin:0 0 8px;font-size:1.05rem;text-transform:capitalize}
 
 .tech-main{max-width:1450px;margin:auto;padding:24px}.tech-board{display:grid;grid-template-columns:repeat(5,minmax(220px,1fr));gap:12px;overflow-x:auto}.tech-column{background:#f4f6f5;border:1px solid #dce3df;border-radius:12px;padding:10px;min-height:360px}.tech-column h3{display:flex;justify-content:space-between;gap:8px;margin:4px 2px 10px}.tech-column h3 span{font-size:12px;background:#fff;border-radius:20px;padding:3px 8px}.tech-card{width:100%;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:5px;background:#fff;color:#27313a;border:1px solid #dce3df;border-left:5px solid #78838c;border-radius:9px;padding:11px;margin-bottom:9px;cursor:pointer}.tech-card.priority-low{border-left-color:#7d8a90}.tech-card.priority-normal{border-left-color:#397a84}.tech-card.priority-high{border-left-color:#d38b2d}.tech-card.priority-urgent{border-left-color:#c63d48}.tech-card small{color:#657078}.tech-priority{font-size:11px;font-weight:700;text-transform:uppercase}#homeInterventionsButton{position:relative}.tech-tile-badge{position:absolute;right:13px;top:12px;min-width:24px;height:24px;padding:0 7px;border-radius:14px;background:#c63d48;color:white;font-weight:700;display:grid;place-items:center;z-index:1;pointer-events:none}.tech-location{display:flex;gap:8px}.tech-history>div{padding:8px 0;border-bottom:1px solid #e2e6e4;display:flex;flex-direction:column}.tech-history small{color:#6a747a}.tech-cat-row{display:grid;grid-template-columns:minmax(180px,1fr) auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #e2e6e4}.tech-empty{padding:12px 4px}.tech-mobile-tabs{display:none;gap:7px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:thin}.tech-mobile-tab{white-space:nowrap;flex:0 0 auto;background:#f4f6f5;color:#33434a;border:1px solid #d4ddda;border-radius:20px;padding:8px 11px;font-size:12px}.tech-mobile-tab.active{background:#285f65;color:#fff;border-color:#285f65}.tech-locate-status{font-size:12px;color:#53646a;align-self:center}.tech-map-link{white-space:nowrap}@media(max-width:800px){.tech-main{padding:12px}.tech-mobile-tabs{display:flex}.tech-board{display:block;overflow:visible}.tech-column{display:none;min-height:0}.tech-column.tech-mobile-active{display:block}.tech-cat-row{grid-template-columns:1fr}.tech-cat-row button{justify-self:start}}
+
+/* V6.8.4.4 — anti-flash des droits : masque uniquement les commandes de modules pendant la résolution des accès. */
+.portal-access-pending #portalHome .welcome-grid,.portal-access-pending #homeSettingsButton{visibility:hidden!important;pointer-events:none!important}
 </style><style>
 :root{--wine:#792e43}nav{flex-wrap:wrap}.v2cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}.v2card{background:white;border:1px solid #dce1e5;border-radius:12px;padding:17px;margin-bottom:12px;box-shadow:0 3px 12px #182b3210}.v2card h3{margin:0 0 8px}.v2meta{color:#63717b;font-size:13px;margin:8px 0}.v2progress{height:8px;background:#e6ebee;border-radius:12px;overflow:hidden}.v2progress span{display:block;height:100%;background:#548a72}.v2line{display:flex;gap:10px;align-items:center;justify-content:space-between;margin:8px 0}.v2line label{flex:1}.v2card button{margin-top:8px}.v2late{border-left:5px solid #ba4040}.v2soon{border-left:5px solid #d5a032}dialog{max-height:90vh;overflow:auto}#subtaskRows{max-height:230px;overflow:auto}.v2tiny{font-size:12px;color:#677}
 .classification{padding:14px;border:1px solid #d7dce0;border-radius:9px;background:#fafbfc;display:grid;gap:12px}.class-options{display:flex;flex-wrap:wrap;gap:15px}.class-options label{flex-direction:row;align-items:center;cursor:pointer;color:#25313c}.class-options input{width:auto}.classification strong{font-size:14px}.meeting-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin:10px 0}.meeting-choices label{display:flex;flex-direction:row;align-items:center;border:1px solid #ddd;border-radius:7px;padding:8px;gap:8px}.meeting-choices input{width:auto}.meeting-decision{border:1px solid #d7dce0;border-radius:8px;padding:12px;margin:10px 0;background:#fafbfc}.meeting-decision .fields{margin:8px 0}.meeting-decision input,.meeting-decision select{min-width:0}
@@ -429,7 +432,7 @@ body.portal-library-readonly #themeDialog{display:none!important}
 .recurrence-delete-option input[type="radio"]{appearance:auto!important;-webkit-appearance:radio!important;width:20px!important;height:20px!important;min-width:20px!important;margin:0!important;outline:none!important;box-shadow:none!important;accent-color:#8a3049}
 .recurrence-delete-option span{flex:1;display:block}
 </style>
-</head><body class="auth-locked"><section id="authGate" aria-label="Connexion au portail municipal">
+</head><body class="auth-locked portal-access-pending"><section id="authGate" aria-label="Connexion au portail municipal">
 <div class="auth-card">
 <div class="auth-lock-mark" aria-hidden="true">🔒</div>
 <h1>Portail municipal</h1>
@@ -453,7 +456,7 @@ body.portal-library-readonly #themeDialog{display:none!important}
 <div id="homeAccount" class="welcome-account" aria-live="polite"><strong id="homeAccountName">Utilisateur connecté</strong><small id="homeAccountEmail"></small></div>
 <button type="button" id="homeLogoutButton" class="welcome-logout-button" aria-label="Se déconnecter" title="Se déconnecter">↪ Se déconnecter</button>
 <button type="button" id="homeSettingsButton" class="welcome-settings-button" data-module="settings" aria-label="Paramètres" title="Paramètres">⚙️ <span>Paramètres</span></button>
-<div class="welcome-version">V6.8.4.3</div>
+<div class="welcome-version">V6.8.4.4</div>
 </div>
 
 </div>
@@ -593,7 +596,7 @@ document.addEventListener('DOMContentLoaded',function(){
   });
 });
 </script><script src="js/08-annuaire.js?v=6804"></script>
-<script src="js/09-access-rights.js?v=6843"></script><script src="js/10-agenda.js?v=6824"></script><script src="js/11-gestion-salles.js?v=6824"></script>
+<script src="js/09-access-rights.js?v=6844"></script><script src="js/10-agenda.js?v=6824"></script><script src="js/11-gestion-salles.js?v=6824"></script>
 <script id="v643-annuaire-opening-fix">
 document.addEventListener('DOMContentLoaded', function () {
   var annuaireButton = document.querySelector('#portalHome [data-module="annuaire"]');
